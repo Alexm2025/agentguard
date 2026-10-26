@@ -1,23 +1,50 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}{{ policy.name if policy else "New policy" }}{% endblock %}
 {% block content %}
-<p><a href="/policies">&larr; Policies</a></p>
-<h1>{{ policy.name if policy else "New policy" }}{% if policy %} <small class="muted">active r{{ policy.active_revision }}</small>{% endif %}</h1>
-{% if saved %}<p class="ok" role="status">Saved and activated revision {{ saved }}.</p>{% endif %}
-<form method="post" action="{{ '/policies/' ~ policy.id if policy else '/policies/new' }}" class="editor">
+<a class="crumb" href="/policies">{{ icon("back") }}Policies</a>
+<div class="page-head">
+  <div>
+    <h1>{{ policy.name if policy else "New policy" }}</h1>
+    <p>{% if policy %}Active revision <b>r{{ policy.active_revision }}</b> · saving creates a new revision and activates it.{% else %}Starts from the built-in default policy.{% endif %}</p>
+  </div>
+</div>
+{% if saved %}<div class="notice ok" role="status">Saved and activated revision {{ saved }}.</div><br>{% endif %}
+<form method="post" action="{{ '/policies/' ~ policy.id if policy else '/policies/new' }}">
   <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-  {% if not policy %}<label>Name <input type="text" name="name" pattern="[A-Za-z0-9_.\-]{1,100}" required></label>{% endif %}
-  <textarea name="yaml_text" rows="30" spellcheck="false" hx-post="/policies-validate" hx-trigger="keyup changed delay:600ms" hx-target="#validation" {% if not p.can("policies:write") %}readonly{% endif %}>{{ text }}</textarea>
-  <div id="validation">{% include "_validation.html" %}</div>
-  {% if p.can("policies:write") %}
-  <label>Change note <input type="text" name="comment" maxlength="500"></label>
-  <button type="submit">Save new revision</button>
-  {% endif %}
+  <div class="grid side">
+    <div>
+      {% if not policy %}<label>Policy name <input type="text" name="name" pattern="[A-Za-z0-9_.\-]{1,100}" required placeholder="e.g. production"></label>{% endif %}
+      <div class="editor-bar"><span class="dots"><i></i><i></i><i></i></span><span>{{ (policy.name if policy else "policy") ~ ".yaml" }}</span></div>
+      <textarea class="code" name="yaml_text" spellcheck="false" aria-label="Policy YAML" hx-post="/policies-validate" hx-trigger="keyup changed delay:600ms" hx-target="#validation" {% if not p.can("policies:write") %}readonly{% endif %}>{{ text }}</textarea>
+    </div>
+    <div>
+      <section class="card">
+        <div class="card-head"><h2>Validation</h2><span class="muted small">live</span></div>
+        <div class="card-body" id="validation">{% include "_validation.html" %}</div>
+      </section>
+      {% if p.can("policies:write") %}
+      <section class="card">
+        <div class="card-body">
+          <label>Change note <input type="text" name="comment" maxlength="500" placeholder="What changed and why"></label>
+          <button type="submit">Save new revision</button>
+        </div>
+      </section>
+      {% endif %}
+      {% if versions %}
+      <section class="card">
+        <div class="card-head"><h2>History</h2></div>
+        <div class="card-body">
+          <ul class="versions">
+            {% for v in versions %}
+            <li><div class="row"><b>r{{ v.revision }}</b>{% if policy and v.revision == policy.active_revision %}<span class="pill active">active</span>{% endif %}<span class="chip">{{ v.digest[:10] }}</span></div>
+            <span class="small">{{ v.comment or "no note" }}</span><span class="muted small">{{ v.created_by }} · {{ v.created_at|ago }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+  </div>
 </form>
-{% if versions %}
-<h2>History</h2>
-<table class="data compact"><thead><tr><th>Revision</th><th>Digest</th><th>Note</th><th>By</th><th>When</th></tr></thead><tbody>
-{% for v in versions %}<tr><td>r{{ v.revision }}{% if policy and v.revision == policy.active_revision %} <span class="badge allow">active</span>{% endif %}</td><td><code>{{ v.digest[:12] }}</code></td><td>{{ v.comment }}</td><td>{{ v.created_by }}</td><td>{{ v.created_at.strftime("%Y-%m-%d %H:%M") }}</td></tr>{% endfor %}
-</tbody></table>
-{% endif %}
 {% endblock %}

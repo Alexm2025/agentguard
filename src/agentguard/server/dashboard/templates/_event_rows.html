@@ -1,13 +1,19 @@
+{% from "_icons.html" import icon, action_pill %}
 {% for e in events %}
 <tr>
-  <td><a href="/events/{{ e.id }}">{{ e.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</a></td>
-  <td>{{ e.type }}</td>
-  <td>{{ e.source }}</td>
-  <td><code>{{ e.tool or "" }}</code></td>
-  <td>{% if e.action %}<span class="badge {{ e.action|lower }}">{{ e.action }}</span>{% endif %}</td>
-  <td class="why">{% for r in (e.data.reasons or [])[:2] %}{{ r.message }}{% if not loop.last %}; {% endif %}{% endfor %}{% if e.data.reason %}{{ e.data.reason }}{% endif %}</td>
-  <td>{% if e.latency_ms is not none %}{{ "%.1f"|format(e.latency_ms) }} ms{% endif %}</td>
+  <td class="time"><a class="rowlink" href="/events/{{ e.id }}" title="{{ e.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC">{{ e.timestamp|ago }}</a></td>
+  <td>{% if e.action %}{{ action_pill(e.action) }}{% else %}<span class="pill">{{ e.type|replace("_", " ") }}</span>{% endif %}</td>
+  <td><a class="rowlink tool" href="/events/{{ e.id }}">{{ e.tool or e.type }}</a>{% if e.type == "tool_result" %}<div class="muted small">tool result</div>{% endif %}</td>
+  <td class="why"><div class="clip">
+    {%- if e.data.taint_chain %}<code>{{ e.data.taint_chain[0] }}</code>
+    {%- elif e.data.reasons %}{{ e.data.reasons[0].message }}
+    {%- elif e.data.reason %}{{ e.data.reason }}
+    {%- elif e.data.source_ref %}<span class="muted">{{ e.data.source_ref }}</span>
+    {%- else %}<span class="muted">—</span>{% endif -%}
+  </div></td>
+  <td><span class="chip">{{ e.source }}</span></td>
+  <td class="time">{% if e.latency_ms is not none %}{{ "%.1f"|format(e.latency_ms) }} ms{% endif %}</td>
 </tr>
 {% else %}
-<tr><td colspan="7" class="muted">No events yet. Point an SDK or gateway at this control plane with an <code>ingest</code> API key.</td></tr>
+<tr><td colspan="6"><div class="empty">{{ icon("inbox") }}<strong>No events yet</strong>Point an SDK or gateway at this control plane with an <code>ingest</code> API key.</div></td></tr>
 {% endfor %}

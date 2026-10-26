@@ -1,19 +1,38 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon, action_pill %}
 {% block title %}Metrics{% endblock %}
 {% block content %}
-<div class="row-between"><h1>Metrics <small class="muted">last {{ hours }} h</small></h1>
-<form method="get" class="inline"><select name="hours">{% for h in [1, 24, 168, 720] %}<option value="{{ h }}" {% if h == hours %}selected{% endif %}>{{ h }} h</option>{% endfor %}</select><button type="submit">Update</button></form></div>
-<div class="stats">
-  <div class="stat"><span class="num">{{ m.attacks_blocked }}</span><span class="label">Tool calls blocked</span></div>
-  <div class="stat"><span class="num">{{ m.tool_calls }}</span><span class="label">Tool calls evaluated</span></div>
-  <div class="stat"><span class="num">{{ "%.0f%%"|format(m.approval_rate * 100) if m.approval_rate is not none else "-" }}</span><span class="label">Approval rate</span></div>
-  <div class="stat"><span class="num">{{ m.false_positive_reports }}</span><span class="label">False-positive reports{% if m.false_positive_rate is not none %} ({{ "%.1f%%"|format(m.false_positive_rate * 100) }} of blocks){% endif %}</span></div>
-  <div class="stat"><span class="num">{{ m.latency_ms.p95 if m.latency_ms.p95 is not none else "-" }}</span><span class="label">p95 decision latency (ms)</span></div>
-  <div class="stat"><span class="num">{{ m.tool_results_flagged }}</span><span class="label">Tool results withheld/redacted</span></div>
+<div class="page-head">
+  <div><h1>Metrics</h1><p>How AgentGuard is protecting your agents over the last {{ hours }} hours.</p></div>
+  <nav class="tabs" aria-label="Time window">
+    {% for h, label in [(1, "1h"), (24, "24h"), (168, "7d"), (720, "30d")] %}<a href="/metrics?hours={{ h }}" {% if h == hours %}aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}
+  </nav>
 </div>
-<div class="grid2">
-<section class="card"><h2>Decisions</h2><table class="data compact"><tbody>{% for k, v in m.actions.items() %}<tr><td><span class="badge {{ k|lower }}">{{ k }}</span></td><td>{{ v }}</td></tr>{% else %}<tr><td class="muted">No data</td></tr>{% endfor %}</tbody></table></section>
-<section class="card"><h2>Approvals</h2><table class="data compact"><tbody>{% for k, v in m.approvals.items() %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% else %}<tr><td class="muted">No data</td></tr>{% endfor %}</tbody></table>
-<h3>Latency</h3><p>p50 {{ m.latency_ms.p50 }} ms · p95 {{ m.latency_ms.p95 }} ms · p99 {{ m.latency_ms.p99 }} ms</p></section>
+<div class="stats">
+  <div class="stat red"><span class="label"><span class="ico">{{ icon("ban") }}</span>Tool calls blocked</span><span class="num">{{ m.attacks_blocked }}</span><span class="sub">of {{ m.tool_calls }} evaluated</span></div>
+  <div class="stat green"><span class="label"><span class="ico">{{ icon("check-circle") }}</span>Approval rate</span><span class="num">{{ "%.0f%%"|format(m.approval_rate * 100) if m.approval_rate is not none else "–" }}</span><span class="sub">approved / resolved requests</span></div>
+  <div class="stat amber"><span class="label"><span class="ico">{{ icon("users") }}</span>False-positive reports</span><span class="num">{{ m.false_positive_reports }}</span><span class="sub">{% if m.false_positive_rate is not none %}{{ "%.1f%%"|format(m.false_positive_rate * 100) }} of blocks{% else %}no blocks yet{% endif %}</span></div>
+  <div class="stat blue"><span class="label"><span class="ico">{{ icon("zap") }}</span>p95 decision time</span><span class="num">{{ "%.1f"|format(m.latency_ms.p95) if m.latency_ms.p95 is not none else "–" }}<small class="muted"> ms</small></span><span class="sub">p50 {{ m.latency_ms.p50 if m.latency_ms.p50 is not none else "–" }} · p99 {{ m.latency_ms.p99 if m.latency_ms.p99 is not none else "–" }} ms</span></div>
+</div>
+<div class="grid two">
+  <section class="card">
+    <div class="card-head"><h2>Decisions</h2></div>
+    <div class="card-body bars">
+      {% set total = m.tool_calls or 1 %}
+      {% for k in ["BLOCK", "REQUIRE_APPROVAL", "REDACT", "ALLOW"] %}
+      <div class="bar-row">{{ action_pill(k) }}<meter class="bar" min="0" max="{{ total }}" value="{{ m.actions.get(k, 0) }}"></meter><span class="n">{{ m.actions.get(k, 0) }}</span></div>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Approvals</h2></div>
+    <div class="card-body bars">
+      {% set atotal = (m.approvals.values()|sum) or 1 %}
+      {% for k in ["pending", "approved", "denied"] %}
+      <div class="bar-row"><span class="pill {{ k }}">{{ k }}</span><meter class="bar" min="0" max="{{ atotal }}" value="{{ m.approvals.get(k, 0) }}"></meter><span class="n">{{ m.approvals.get(k, 0) }}</span></div>
+      {% endfor %}
+      <p class="muted small">{{ m.tool_results_flagged }} tool results were withheld or redacted.</p>
+    </div>
+  </section>
 </div>
 {% endblock %}

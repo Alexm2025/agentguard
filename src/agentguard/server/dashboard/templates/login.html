@@ -1,15 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Sign in{% endblock %}
-{% block content %}
-<section class="card narrow">
-  <h1>Sign in to AgentGuard</h1>
-  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-  <form method="post" action="/login">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    <label>Email <input type="email" name="email" autocomplete="username" required></label>
-    <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
-    <button type="submit">Sign in</button>
-  </form>
-  {% if sso %}<p><a class="button secondary" href="/auth/oidc/login">Sign in with SSO</a></p>{% endif %}
-</section>
+{% block bare %}
+<div class="auth">
+  <div>
+    <section class="auth-card">
+      <div class="brand">{{ mark() }}<span>AgentGuard</span></div>
+      <h1>Welcome back</h1>
+      <p class="lead">Sign in to monitor and control your agents.</p>
+      {% if error %}<div class="notice error" role="alert">{{ error }}</div><br>{% endif %}
+      <form method="post" action="/login">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <label>Email <input type="email" name="email" autocomplete="username" required autofocus></label>
+        <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+        <button type="submit">Sign in</button>
+      </form>
+      {% if sso %}
+      <div class="divider">or</div>
+      <a class="button secondary" href="/auth/oidc/login">{{ icon("lock") }}Sign in with SSO</a>
+      {% endif %}
+    </section>
+    <p class="auth-foot">AgentGuard {{ features.edition }} edition</p>
+  </div>
+</div>
 {% endblock %}

@@ -1,4 +1,4 @@
-<!doctype html>
+{% from "_icons.html" import icon, mark %}<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -10,23 +10,37 @@
 </head>
 <body {% if p and p.csrf_token %}hx-headers='{"X-CSRF-Token": "{{ p.csrf_token }}"}'{% endif %}>
 {% if p %}
-<header class="top">
-  <a class="brand" href="/events">AgentGuard</a>
-  <nav>
-    <a href="/events" {% if request.url.path.startswith('/events') %}aria-current="page"{% endif %}>Events</a>
-    <a href="/approvals" {% if request.url.path.startswith('/approvals') %}aria-current="page"{% endif %}>Approvals</a>
-    <a href="/policies" {% if request.url.path.startswith('/policies') %}aria-current="page"{% endif %}>Policies</a>
-    <a href="/metrics" {% if request.url.path.startswith('/metrics') %}aria-current="page"{% endif %}>Metrics</a>
-    <a href="/settings" {% if request.url.path.startswith('/settings') %}aria-current="page"{% endif %}>Settings</a>
-  </nav>
-  <form method="post" action="/logout" class="who">
-    <span>{{ p.display }} · {{ p.role }}</span>
-    <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-    <button class="link" type="submit">Sign out</button>
-  </form>
-</header>
+{% set path = request.url.path %}
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="/events">{{ mark() }}<span>AgentGuard<small>Agent runtime security</small></span></a>
+    <div class="nav-label">Monitor</div>
+    <nav class="nav">
+      <a href="/events" {% if path.startswith('/events') %}aria-current="page"{% endif %}>{{ icon("activity") }}Events</a>
+      <a href="/approvals" {% if path.startswith('/approvals') %}aria-current="page"{% endif %}>{{ icon("check-circle") }}Approvals</a>
+      <a href="/metrics" {% if path.startswith('/metrics') %}aria-current="page"{% endif %}>{{ icon("chart") }}Metrics</a>
+    </nav>
+    <div class="nav-label">Configure</div>
+    <nav class="nav">
+      <a href="/policies" {% if path.startswith('/policies') %}aria-current="page"{% endif %}>{{ icon("file") }}Policies</a>
+      <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>{{ icon("settings") }}Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="who">
+        <span class="avatar">{{ p.display[:1] }}</span>
+        <div><div class="name">{{ p.display }}</div><div class="role">{{ p.role }}</div></div>
+      </div>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+        <button type="submit">{{ icon("logout") }}Sign out</button>
+      </form>
+      <div class="edition">AgentGuard {{ features.edition }} edition</div>
+    </div>
+  </aside>
+  <main class="main"><div class="page">{% block content %}{% endblock %}</div></main>
+</div>
+{% else %}
+{% block bare %}{% endblock %}
 {% endif %}
-<main>{% block content %}{% endblock %}</main>
-<footer class="foot">AgentGuard {{ features.edition }} edition</footer>
 </body>
 </html>

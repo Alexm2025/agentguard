@@ -1,18 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Approval {{ a.id }}{% endblock %}
+{% from "_icons.html" import icon %}
+{% block title %}Approval · {{ a.tool }}{% endblock %}
 {% block content %}
-<p><a href="/approvals">&larr; Approvals</a></p>
-<h1>Approval for <code>{{ a.tool }}</code> <span class="badge {{ a.status }}">{{ a.status }}</span></h1>
-{% if a.taint_chain %}<section class="card warn"><h2>Taint chain</h2><ol class="chain">{% for c in a.taint_chain %}<li><code>{{ c }}</code></li>{% endfor %}</ol></section>{% endif %}
-<section class="card"><h2>Why</h2><ul>{% for r in a.reasons or [] %}<li>{{ r.message }}</li>{% endfor %}</ul></section>
-<section class="card"><h2>Arguments</h2><pre>{{ a.arguments|tojson_pretty }}</pre></section>
-{% if a.status == "pending" and p.can("approvals:resolve") %}
-<form method="post" action="/approvals/{{ a.id }}/resolve" class="card">
-  <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-  <label>Note <input type="text" name="note" maxlength="1000"></label>
-  <button name="decision" value="approve" type="submit">Approve</button>
-  <button name="decision" value="deny" type="submit" class="danger">Deny</button>
-</form>
-{% elif a.resolved_by %}<p class="muted">Resolved by {{ a.resolved_by }} via {{ a.channel }} at {{ a.resolved_at }}. {{ a.resolution_note }}</p>{% endif %}
-<p><a href="/events/{{ a.event_id }}">View triggering event</a></p>
+<a class="crumb" href="/approvals">{{ icon("back") }}Approvals</a>
+<div class="page-head">
+  <div class="hero"><span class="pill {{ a.status }} lg">{{ a.status }}</span><span class="tool">{{ a.tool }}</span>{% if a.risk %}<span class="risk {{ a.risk }}">{{ a.risk }} risk</span>{% endif %}</div>
+  <a class="button secondary" href="/events/{{ a.event_id }}">View triggering event</a>
+</div>
+<div class="grid side">
+  <div>
+    {% if a.taint_chain %}<section class="card"><div class="card-head"><h2>Taint chain</h2></div><div class="card-body">{% for c in a.taint_chain %}<div><code>{{ c }}</code></div>{% endfor %}</div></section>{% endif %}
+    <section class="card"><div class="card-head"><h2>Why approval is needed</h2></div><div class="card-body"><ul class="reasons">{% for r in a.reasons or [] %}<li><span class="msg">{{ r.message }}</span></li>{% endfor %}</ul></div></section>
+    <section class="card"><div class="card-head"><h2>Arguments</h2></div><div class="card-body"><pre>{{ a.arguments|tojson_pretty }}</pre></div></section>
+  </div>
+  <div>
+    <section class="card">
+      <div class="card-head"><h2>Decision</h2></div>
+      <div class="card-body">
+        {% if a.status == "pending" and p.can("approvals:resolve") %}
+        <form method="post" action="/approvals/{{ a.id }}/resolve">
+          <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+          <label>Note (optional) <input type="text" name="note" maxlength="1000" placeholder="e.g. verified with the requester"></label>
+          <div class="row"><button name="decision" value="approve" type="submit" class="approve">Approve</button><button name="decision" value="deny" type="submit" class="danger">Deny</button></div>
+        </form>
+        {% elif a.resolved_by %}
+        <p>Resolved by <b>{{ a.resolved_by }}</b> via <span class="chip">{{ a.channel }}</span> {{ a.resolved_at|ago }}.</p>
+        {% if a.resolution_note %}<p class="muted">“{{ a.resolution_note }}”</p>{% endif %}
+        {% else %}<p class="muted">This request {{ a.status }} without a decision.</p>{% endif %}
+        <div class="kv small"><span>Requested <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span></div>
+      </div>
+    </section>
+  </div>
+</div>
 {% endblock %}

@@ -1,30 +1,61 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<h1>Settings</h1>
-{% if new_key %}<section class="card warn"><h2>New API key</h2><p>Copy it now; it will not be shown again.</p><pre class="key">{{ new_key }}</pre></section>{% endif %}
+<div class="page-head"><div><h1>Settings</h1><p>API keys, members and the audit log for your organization.</p></div></div>
+
+{% if new_key %}
+<div class="notice warn"><strong>Copy your new API key now.</strong> It is stored only as a hash and will not be shown again.</div>
+<br><pre class="key">{{ new_key }}</pre><br>
+{% endif %}
+
 {% if p.can("keys:manage") %}
 <section class="card">
-  <h2>API keys</h2>
-  <table class="data compact"><thead><tr><th>Name</th><th>Prefix</th><th>Scopes</th><th>Last used</th><th></th></tr></thead><tbody>
-  {% for k in keys %}<tr><td>{{ k.name }}</td><td><code>{{ k.prefix }}…</code></td><td>{{ k.scopes|join(", ") }}</td><td>{{ k.last_used_at.strftime("%Y-%m-%d %H:%M") if k.last_used_at else "never" }}</td>
-  <td>{% if k.revoked_at %}<span class="badge block">revoked</span>{% else %}<form method="post" action="/settings/keys/{{ k.id }}/revoke" class="inline"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}"><button class="danger" type="submit">Revoke</button></form>{% endif %}</td></tr>{% endfor %}
-  </tbody></table>
-  <form method="post" action="/settings/keys" class="inline">
-    <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-    <label>Name <input type="text" name="name" required maxlength="200"></label>
-    {% for s in ["ingest", "read", "approve", "gateway", "admin"] %}<label class="check"><input type="checkbox" name="scopes" value="{{ s }}" {% if s == "ingest" %}checked{% endif %}> {{ s }}</label>{% endfor %}
-    <button type="submit">Create key</button>
-  </form>
+  <div class="card-head"><h2>{{ icon("key") }} API keys</h2><span class="muted small">used by SDKs and gateways</span></div>
+  <div class="toolbar">
+    <form method="post" action="/settings/keys" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+      <label>Name <input type="text" name="name" required maxlength="200" placeholder="e.g. support-bot production"></label>
+      <div class="row">{% for s in ["ingest", "read", "approve", "gateway", "admin"] %}<label class="check"><input type="checkbox" name="scopes" value="{{ s }}" {% if s == "ingest" %}checked{% endif %}>{{ s }}</label>{% endfor %}</div>
+      <button type="submit">{{ icon("plus") }}Create key</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table class="data compact">
+      <thead><tr><th>Name</th><th>Key</th><th>Scopes</th><th>Last used</th><th></th></tr></thead>
+      <tbody>
+      {% for k in keys %}
+        <tr><td>{{ k.name }}</td><td><span class="chip">{{ k.prefix }}…</span></td><td>{% for s in k.scopes %}<span class="chip">{{ s }}</span> {% endfor %}</td>
+        <td class="time">{{ k.last_used_at|ago if k.last_used_at else "never" }}</td>
+        <td>{% if k.revoked_at %}<span class="pill denied">revoked</span>{% else %}<form method="post" action="/settings/keys/{{ k.id }}/revoke" class="inline"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}"><button class="secondary" type="submit">Revoke</button></form>{% endif %}</td></tr>
+      {% else %}
+        <tr><td colspan="5"><div class="empty"><strong>No API keys</strong>Create one to connect an agent.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endif %}
-{% if members %}
-<section class="card"><h2>Members</h2><table class="data compact"><tbody>{% for m, u in members %}<tr><td>{{ u.email }}</td><td>{{ m.role }}</td></tr>{% endfor %}</tbody></table>
-<p class="muted">Manage members with the REST API (<code>/api/v1/members</code>).</p></section>
-{% endif %}
-{% if verification %}
-<section class="card {{ 'ok' if verification.valid else 'warn' }}"><h2>Audit log</h2>
-<p>{{ verification.entries }} entries · chain {{ "verified" if verification.valid else "BROKEN at entry " ~ verification.broken_at ~ " (" ~ verification.reason ~ ")" }}</p>
-<p><a href="/api/v1/audit/export">Export JSON</a></p></section>
-{% endif %}
+
+<div class="grid two">
+  {% if members %}
+  <section class="card">
+    <div class="card-head"><h2>{{ icon("users") }} Members</h2></div>
+    <div class="table-wrap"><table class="data compact"><tbody>
+      {% for m, u in members %}<tr><td><div class="row"><span class="avatar">{{ u.email[:1] }}</span>{{ u.email }}</div></td><td><span class="chip">{{ m.role }}</span></td></tr>{% endfor %}
+    </tbody></table></div>
+    <div class="card-body muted small">Invite or change roles with <code>/api/v1/members</code>.</div>
+  </section>
+  {% endif %}
+  {% if verification %}
+  <section class="card">
+    <div class="card-head"><h2>{{ icon("lock") }} Audit log</h2><span class="pill {{ 'active' if verification.valid else 'denied' }}">{{ "intact" if verification.valid else "tampered" }}</span></div>
+    <div class="card-body">
+      <p>{{ verification.entries }} entries · chain {{ "verified" if verification.valid else "BROKEN at entry " ~ verification.broken_at ~ " (" ~ verification.reason ~ ")" }}</p>
+      <p class="muted small">Every change is hash-chained to the previous entry, so edits or deletions are detectable.</p>
+      <a class="button secondary" href="/api/v1/audit/export">Export JSON</a>
+    </div>
+  </section>
+  {% endif %}
+</div>
 {% endblock %}

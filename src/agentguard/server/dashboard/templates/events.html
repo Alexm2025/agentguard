@@ -1,23 +1,38 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Events{% endblock %}
 {% block content %}
-<div class="row-between">
-  <h1>Live event feed</h1>
-  <form method="get" action="/events" class="inline">
-    <label>Action
-      <select name="action">
-        {% for a in ["", "BLOCK", "REQUIRE_APPROVAL", "REDACT", "ALLOW"] %}
-        <option value="{{ a }}" {% if a == action %}selected{% endif %}>{{ a or "All" }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <button type="submit">Filter</button>
-  </form>
+<div class="page-head">
+  <div>
+    <h1>Events</h1>
+    <p>Every tool call and tool result your agents produced, with AgentGuard's decision.</p>
+  </div>
+  <span class="live">Live</span>
 </div>
-<table class="data">
-  <thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Tool</th><th>Action</th><th>Why</th><th>Latency</th></tr></thead>
-  <tbody id="feed" hx-get="/events/feed?action={{ action }}" hx-trigger="every 3s" hx-swap="innerHTML">
-    {% include "_event_rows.html" %}
-  </tbody>
-</table>
+
+<div class="stats">
+  <div class="stat red"><span class="label"><span class="ico">{{ icon("ban") }}</span>Blocked · 24h</span><span class="num">{{ m.attacks_blocked }}</span><span class="sub">of {{ m.tool_calls }} tool calls</span></div>
+  <div class="stat amber"><span class="label"><span class="ico">{{ icon("clock") }}</span>Awaiting approval</span><span class="num">{{ pending }}</span><span class="sub"><a href="/approvals">Open queue</a></span></div>
+  <div class="stat violet"><span class="label"><span class="ico">{{ icon("eye-off") }}</span>Results withheld · 24h</span><span class="num">{{ m.tool_results_flagged }}</span><span class="sub">injection or sensitive data</span></div>
+  <div class="stat blue"><span class="label"><span class="ico">{{ icon("zap") }}</span>p95 decision time</span><span class="num">{% if m.latency_ms.p95 is not none %}{{ "%.1f"|format(m.latency_ms.p95) }}<small class="muted"> ms</small>{% else %}–{% endif %}</span><span class="sub">engine overhead per call</span></div>
+</div>
+
+<section class="card">
+  <div class="toolbar">
+    <nav class="tabs" aria-label="Filter by decision">
+      {% for value, label in [("", "All"), ("BLOCK", "Blocked"), ("REQUIRE_APPROVAL", "Approval"), ("REDACT", "Redacted"), ("ALLOW", "Allowed")] %}
+      <a href="/events{% if value %}?action={{ value }}{% endif %}" {% if value == action %}aria-current="true"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <span class="muted small">Refreshes every 3 seconds</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>When</th><th>Decision</th><th>Tool</th><th>Reason</th><th>Source</th><th>Latency</th></tr></thead>
+      <tbody id="feed" hx-get="/events/feed?action={{ action }}" hx-trigger="every 3s" hx-swap="innerHTML">
+        {% include "_event_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}

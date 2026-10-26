@@ -42,6 +42,49 @@ from agentguard.server.security import generate_api_key, sha256, verify_password
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
 templates.env.filters["tojson_pretty"] = lambda v: json.dumps(v, indent=2, ensure_ascii=False, default=str)
+
+
+def _ago(value: Any) -> str:
+    """Human relative time ("3m ago") for datetimes or ISO strings."""
+    from datetime import UTC, datetime
+
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return str(value)
+    if not isinstance(value, datetime):
+        return ""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    secs = int((datetime.now(UTC) - value).total_seconds())
+    if secs < 0:
+        secs = -secs
+        for unit, size in (("d", 86400), ("h", 3600), ("m", 60)):
+            if secs >= size:
+                return f"in {secs // size}{unit}"
+        return "in <1m"
+    for unit, size in (("d", 86400), ("h", 3600), ("m", 60)):
+        if secs >= size:
+            return f"{secs // size}{unit} ago"
+    return "just now"
+
+
+def _attack_path(d: dict[str, Any]) -> list[dict[str, Any]]:
+    """Group derived taint matches by (source, argument) for the attack-path diagram."""
+    seen: dict[tuple[str, str], dict[str, Any]] = {}
+    for m in d.get("taint_matches") or []:
+        if m.get("also_in_trusted"):
+            continue
+        key = (str(m.get("source")), str(m.get("arg_path")))
+        cur = seen.get(key)
+        if cur is None or float(m.get("score") or 0) > float(cur.get("score") or 0):
+            seen[key] = m
+    return list(seen.values())[:6]
+
+
+templates.env.filters["ago"] = _ago
+templates.env.filters["attack_path"] = _attack_path
 router = APIRouter(include_in_schema=False)
 LOGIN_CSRF = "ag_login_csrf"
 
@@ -174,7 +217,27 @@ async def events_page(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     need(p, "events:read")
-    return render(request, "events.html", p, events=await _events(db, p.org_id, action), action=action or "")
+    from sqlalchemy import func
+
+    pending = int(
+        (
+            await db.execute(
+                select(func.count())
+                .select_from(Approval)
+                .where(Approval.org_id == p.org_id, Approval.status == "pending")
+            )
+        ).scalar()
+        or 0
+    )
+    return render(
+        request,
+        "events.html",
+        p,
+        events=await _events(db, p.org_id, action),
+        action=action or "",
+        m=await services.metrics_summary(db, p.org_id, 24),
+        pending=pending,
+    )
 
 
 @router.get("/events/feed")
