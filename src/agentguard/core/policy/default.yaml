@@ -1,0 +1,135 @@
+# AgentGuard default policy.
+# Copy this file and adjust it for your tools: `agentguard policy init > agentguard.yaml`.
+version: 1
+extends: none
+name: default
+revision: 1
+description: >
+  Conservative defaults. Tool results are untrusted unless marked otherwise; sinks whose
+  destination was chosen by untrusted content are blocked; secrets never leave through sinks;
+  destructive actions steered by untrusted content need a human.
+
+settings:
+  fail_mode: closed
+  fail_open_max_risk: medium
+  default_action: ALLOW
+  unknown_tool:
+    role: sink
+    risk: medium
+  taint:
+    min_substring_len: 8
+    fuzzy_threshold: 88
+    shingle_containment: 0.6
+    semantic: false
+    decode: true
+  detectors:
+    heuristic: { enabled: true, threshold: 0.5 }
+    ml: { enabled: true, model: auto, threshold: 0.875, required: false, min_words: 4 }
+    judge: { enabled: false, provider: openai, model: gpt-4.1-mini, min_risk: high }
+    scan_tool_descriptions: true
+  approvals:
+    timeout_seconds: 300
+    on_timeout: BLOCK
+
+# Name-based defaults for common tool naming conventions. Exact names win over globs, and the
+# first matching glob wins, so put your own tools above these or in a separate policy.
+tools:
+  "read_*":      { role: source, risk: low }
+  "get_*":       { role: source, risk: low }
+  "list_*":      { role: source, risk: low }
+  "search*":     { role: source, risk: low, ref_arg: query }
+  "fetch*":      { role: source, risk: low, ref_arg: url }
+  "browse*":     { role: source, risk: low, ref_arg: url }
+  "web_*":       { role: source, risk: low, ref_arg: url }
+  "http_get":    { role: source, risk: low, ref_arg: url }
+  "send_*":      { role: sink, risk: high }
+  "email*":      { role: sink, risk: high }
+  "post_*":      { role: sink, risk: high }
+  "http_post":   { role: sink, risk: high, destination_args: [url] }
+  "upload*":     { role: sink, risk: high }
+  "share*":      { role: sink, risk: high }
+  "create_*":    { role: sink, risk: medium }
+  "update_*":    { role: sink, risk: medium }
+  "write_*":     { role: sink, risk: medium, destination_args: [path, file_path] }
+  "delete*":     { role: sink, risk: critical }
+  "remove*":     { role: sink, risk: critical }
+  "drop*":       { role: sink, risk: critical }
+  "exec*":       { role: sink, risk: critical }
+  "run_*":       { role: sink, risk: critical }
+  "shell*":      { role: sink, risk: critical }
+  "transfer*":   { role: sink, risk: critical }
+  "pay*":        { role: sink, risk: critical }
+
+rules:
+  - id: secrets-to-sink
+    description: Credentials and keys must never be passed to a sink.
+    roles: [sink, both]
+    when: { dlp: [aws_access_key, aws_secret_key, github_token, anthropic_key, openai_key, slack_token,
+                  stripe_key, google_api_key, private_key, jwt, agentguard_key, password_assignment] }
+    action: BLOCK
+    message: a credential or secret appears in the arguments
+
+  - id: secrets-in-url
+    description: Credentials must not leave via URLs of fetch-style tools either.
+    roles: [source]
+    when: { dlp: [aws_access_key, aws_secret_key, github_token, anthropic_key, openai_key, slack_token,
+                  stripe_key, google_api_key, private_key, jwt, agentguard_key] }
+    action: BLOCK
+    message: a credential or secret appears in a request URL
+
+  - id: tainted-destination-high
+    description: High-risk sinks whose recipient/target came from untrusted content.
+    roles: [sink, both]
+    min_risk: high
+    when: { tainted_args: destination }
+    action: BLOCK
+    message: the destination was taken from untrusted content
+
+  - id: tainted-destination
+    description: Any sink whose recipient/target came from untrusted content needs approval.
+    roles: [sink, both]
+    when: { tainted_args: destination }
+    action: REQUIRE_APPROVAL
+    message: the destination was taken from untrusted content
+
+  - id: tainted-critical-action
+    description: Destructive / irreversible actions with any argument taken from untrusted content.
+    roles: [sink, both]
+    min_risk: critical
+    when: { tainted_args: any, taint_kinds: [exact, substring, entity, decoded, fuzzy] }
+    action: REQUIRE_APPROVAL
+    message: a destructive action uses values taken from untrusted content
+
+  - id: injection-steered-critical
+    description: Destructive actions while injected instructions are in context.
+    roles: [sink, both]
+    min_risk: critical
+    when: { injection_detected: true }
+    action: BLOCK
+    message: a prompt injection was detected in untrusted content and the action is destructive
+
+  - id: injection-steered-high
+    description: High-risk sinks while injected instructions are in context.
+    roles: [sink, both]
+    min_risk: high
+    when: { injection_detected: true, tainted_args: any }
+    action: BLOCK
+    message: a prompt injection was detected and the arguments carry untrusted content
+
+  - id: injection-steered-sink
+    description: Any sink while injected instructions are in context needs approval.
+    roles: [sink, both]
+    min_risk: high
+    when: { injection_detected: true }
+    action: REQUIRE_APPROVAL
+    message: a prompt injection was detected in untrusted content
+
+  - id: exfil-via-url-params
+    description: Fetching an attacker-chosen URL that carries data in its query string.
+    roles: [source]
+    when:
+      tainted_args: [url, uri, link, href]
+      args:
+        - { path: "*", matches: "[?&#][^=&#]{1,40}=[^&#]{12,}" }
+    action: BLOCK
+    message: an untrusted URL carries data in its query string (possible exfiltration)
