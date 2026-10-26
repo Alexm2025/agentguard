@@ -1,0 +1,52 @@
+image:
+  repository: ghcr.io/alexm2025/agentguard
+  tag: ""            # defaults to the chart appVersion
+  pullPolicy: IfNotPresent
+
+# Secrets are read from an existing Secret (recommended) with these keys:
+#   database-url, redis-url, secret-key, service-token, gateway-api-key (optional)
+existingSecret: agentguard
+
+publicUrl: https://agentguard.example.com
+env: {}              # extra environment variables for all components
+
+server:
+  enabled: true
+  replicas: 2
+  migrateOnInstall: true  # runs `agentguard server migrate` as a pre-install/pre-upgrade hook Job
+  resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { memory: 1Gi } }
+
+llmGateway:
+  enabled: true
+  replicas: 2          # stateless; scale freely
+  workers: 2           # processes per pod
+  resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { memory: 2Gi } }
+  autoscaling: { enabled: true, minReplicas: 2, maxReplicas: 10, targetCPUUtilizationPercentage: 70 }
+
+mcpGateway:
+  enabled: false
+  replicas: 1          # >1 relies on sessionAffinity: ClientIP (taint state is per pod)
+  resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { memory: 2Gi } }
+
+# Rendered into gateway.yaml for both gateways (see deploy/gateway.yaml).
+gatewayConfig:
+  auth: { mode: control_plane }
+  mcp: { on_poisoned_tool: remove, on_changed_tool: remove, servers: [] }
+  llm: { openai_base_url: https://api.openai.com, anthropic_base_url: https://api.anthropic.com, strict: false }
+
+# Optional: mount a PVC (or other volume) that contains injection-classifier-v1/.
+model:
+  volume: {}         # e.g. { persistentVolumeClaim: { claimName: agentguard-model } }
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: agentguard.example.com
+  tls: []            # [{ secretName: agentguard-tls, hosts: [agentguard.example.com] }]
+
+podSecurityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
+securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+nodeSelector: {}
+tolerations: []
+affinity: {}

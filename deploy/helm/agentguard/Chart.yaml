@@ -1,0 +1,9 @@
+apiVersion: v2
+name: agentguard
+description: Runtime security for LLM agents - control plane, LLM API gateway and MCP gateway
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/Alexm2025/agentguard
+sources: [https://github.com/Alexm2025/agentguard]
+keywords: [llm, agents, security, prompt-injection, mcp]
