@@ -1,0 +1,27 @@
+# Render blueprint for a public demo of the AgentGuard control plane.
+# New > Blueprint > pick this repo. Render asks for the admin password; everything else is generated.
+# Free instances have no persistent disk: the SQLite demo database (and the demo data) is recreated
+# on each restart. Use Postgres (AGENTGUARD_DATABASE_URL) for anything beyond a demo.
+services:
+  - type: web
+    name: agentguard-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    dockerCommand: >-
+      sh -c "agentguard server migrate && agentguard server run --host 0.0.0.0 --port $PORT
+      & sleep 8 && agentguard server seed-demo; wait"
+    envVars:
+      - key: AGENTGUARD_ENV
+        value: production
+      - key: AGENTGUARD_DATABASE_URL
+        value: sqlite+aiosqlite:////tmp/agentguard.db
+      - key: AGENTGUARD_SECRET_KEY
+        generateValue: true
+      - key: AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL
+        value: demo@agentguard.dev
+      - key: AGENTGUARD_BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
+      - key: AGENTGUARD_TRUST_PROXY_HEADERS
+        value: "true"

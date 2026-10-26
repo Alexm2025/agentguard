@@ -94,6 +94,7 @@ ignore = ["PLR0913", "PLR0917", "PLR2004", "PLR0911", "PLR0912", "PLR0915", "S10
 "src/agentguard/gateway/**" = ["B008"]
 "ee/**" = ["B008"]
 "benchmark/**" = ["S311", "RUF001"]
+"deploy/**" = ["S311"]
 "ml/**" = ["S311"]
 "ml/data.py" = ["S311", "E501"]
 "src/agentguard/server/settings.py" = ["E501"]
