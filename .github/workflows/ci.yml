@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -e ".[server,ml,openai,anthropic,langchain,llamaindex,openai-agents]" -e ee ruff mypy bandit
+      - run: ruff check .
+      - run: ruff format --check .
+      - name: mypy (strict)
+        run: mypy src/agentguard ee/agentguard_ee
+      - name: bandit
+        run: bandit -q -r src ee -c pyproject.toml
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: agentguard, POSTGRES_PASSWORD: agentguard, POSTGRES_DB: agentguard_test }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U agentguard" --health-interval 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-retries 20
+    env:
+      AGENTGUARD_TEST_DATABASE_URL: postgresql+psycopg://agentguard:agentguard@localhost:5432/agentguard_test
+      AGENTGUARD_TEST_REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python }}", cache: pip }
+      - run: pip install -e ".[server,ml,openai,anthropic,langchain,llamaindex,openai-agents]" -e ee pytest pytest-asyncio pytest-cov hypothesis fakeredis mcp
+      - name: tests (SQLite + Postgres + Redis)
+        run: pytest --cov=agentguard --cov-report=xml --cov-report=term
+      - name: core coverage gate (>= 85%)
+        run: coverage report --include="src/agentguard/core/*" --fail-under=85
+      - uses: actions/upload-artifact@v4
+        if: matrix.python == '3.12'
+        with: { name: coverage, path: coverage.xml }
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -e ".[server,gateway,ml,telemetry]" pip-audit cyclonedx-bom pip-licenses
+      - name: dependency vulnerabilities
+        run: pip-audit --skip-editable
+      - name: SBOM (CycloneDX)
+        run: cyclonedx-py environment --of JSON -o sbom.cdx.json
+      - name: third-party licenses
+        run: pip-licenses --format=markdown --with-urls --order=license > third-party-licenses.md
+      - uses: actions/upload-artifact@v4
+        with: { name: sbom, path: "sbom.cdx.json\nthird-party-licenses.md" }
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/agentguard
+      - run: helm template t deploy/helm/agentguard --set mcpGateway.enabled=true --set ingress.enabled=true > /dev/null
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with: { context: ., push: false, tags: "agentguard:ci", load: true, build-args: "WITH_EE=1" }
+      - name: image runs as non-root and serves /healthz
+        run: |
+          test "$(docker run --rm --entrypoint id agentguard:ci -u)" = "10001"
+          docker run -d --name ag -p 8000:8000 -e AGENTGUARD_ENV=development agentguard:ci server run
+          for i in $(seq 1 30); do curl -fs localhost:8000/healthz && exit 0; sleep 1; done
+          docker logs ag; exit 1
