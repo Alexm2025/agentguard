@@ -27,12 +27,17 @@ def build_engine(cfg: GatewayConfig) -> tuple[Engine, Approver | None]:
     if cfg.control_plane.url:
         from agentguard.client import ControlPlaneApprover, ControlPlaneClient, ControlPlaneSink
 
-        token = os.environ.get(cfg.control_plane.token_env)
-        cp = ControlPlaneClient(cfg.control_plane.url, token)
-        sinks.append(ControlPlaneSink(cp))
-        approver = ControlPlaneApprover(cp)
-        if store is None:
-            store = cp.policy_store()
+        # Events, approvals and policy use an ingest-scoped API key; the service token is only for
+        # key introspection (ControlPlaneAuth).
+        api_key = os.environ.get("AGENTGUARD_API_KEY")
+        if api_key:
+            cp = ControlPlaneClient(cfg.control_plane.url, api_key)
+            sinks.append(ControlPlaneSink(cp))
+            approver = ControlPlaneApprover(cp)
+            if store is None:
+                store = cp.policy_store()
+        else:
+            log.warning("AGENTGUARD_API_KEY not set: events, approvals and policies will not use the control plane")
     return Engine(store, sinks=sinks), approver
 
 
@@ -133,18 +138,35 @@ def _cmd_llm(ns: argparse.Namespace) -> int:
     cfg = load_gateway_config(ns.config)
     if ns.policy:
         cfg.policy = ns.policy
+    common_opts = {
+        "host": ns.host,
+        "port": ns.port,
+        "ssl_certfile": ns.ssl_certfile,
+        "ssl_keyfile": ns.ssl_keyfile,
+        "proxy_headers": False,
+        "server_header": False,
+    }
+    if ns.workers > 1:
+        # The LLM gateway is stateless (provenance is rebuilt from each request), so it scales across
+        # processes. Each worker builds its own app from the same config.
+        if ns.config:
+            os.environ["AGENTGUARD_GATEWAY_CONFIG"] = ns.config
+        if ns.policy:
+            os.environ["AGENTGUARD_POLICY"] = ns.policy
+        uvicorn.run("agentguard.gateway.cli:llm_app_from_env", factory=True, workers=ns.workers, **common_opts)
+        return 0
     engine, approver = build_engine(cfg)
-    app = create_app(engine, build_auth(cfg), cfg.llm, approver=approver)
-    uvicorn.run(
-        app,
-        host=ns.host,
-        port=ns.port,
-        ssl_certfile=ns.ssl_certfile,
-        ssl_keyfile=ns.ssl_keyfile,
-        proxy_headers=False,
-        server_header=False,
-    )
+    uvicorn.run(create_app(engine, build_auth(cfg), cfg.llm, approver=approver), **common_opts)
     return 0
+
+
+def llm_app_from_env() -> Any:
+    """App factory for multi-worker LLM gateways (``--workers``)."""
+    from agentguard.gateway.llm.app import create_app
+
+    cfg = load_gateway_config(os.environ.get("AGENTGUARD_GATEWAY_CONFIG"))
+    engine, approver = build_engine(cfg)
+    return create_app(engine, build_auth(cfg), cfg.llm, approver=approver)
 
 
 def _cmd_key_hash(ns: argparse.Namespace) -> int:
@@ -179,6 +201,13 @@ def register(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
         h.add_argument("--port", type=int, default=int(os.environ.get("AGENTGUARD_PORT", port)))
         h.add_argument("--ssl-certfile", default=os.environ.get("AGENTGUARD_TLS_CERT"))
         h.add_argument("--ssl-keyfile", default=os.environ.get("AGENTGUARD_TLS_KEY"))
+        if name == "llm":
+            h.add_argument(
+                "--workers",
+                type=int,
+                default=int(os.environ.get("AGENTGUARD_WORKERS", "1")),
+                help="worker processes (the LLM gateway is stateless)",
+            )
         h.set_defaults(func=fn)
 
     k = sub.add_parser("key", help="API key helpers").add_subparsers(dest="key_cmd", required=True)

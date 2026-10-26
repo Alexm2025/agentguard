@@ -145,7 +145,8 @@ def _load_ml(model: str, threshold: float, required: bool, min_words: int = 4) -
             raise RuntimeError(f"ML detector required but no model found for {model!r}")
         if det is None:
             log.warning(
-                "ML detector disabled: no model found (set AGENTGUARD_MODEL_DIR or run `agentguard model download`)"
+                "ML detector disabled: no model found "
+                "(build one with `python ml/train.py` and set AGENTGUARD_MODEL_DIR)"
             )
         _ML_CACHE[key] = det
         return det
