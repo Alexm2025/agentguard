@@ -139,3 +139,15 @@ def register(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     v = srv.add_parser("verify-audit", help="verify an organization's audit hash chain")
     v.add_argument("org_id")
     v.set_defaults(func=_cmd_verify_audit)
+    d = srv.add_parser("seed-demo", help="load demo sessions into an empty organization (for demo deployments)")
+    d.add_argument("--org-slug", default="default")
+    d.set_defaults(func=_cmd_seed_demo)
+
+
+def _cmd_seed_demo(ns: argparse.Namespace) -> int:
+    from agentguard.server.demo import seed
+    from agentguard.server.settings import get_settings
+
+    n = asyncio.run(seed(get_settings(), ns.org_slug))
+    print(json.dumps({"seeded_events": n}))
+    return 0
