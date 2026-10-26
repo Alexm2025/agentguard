@@ -144,22 +144,34 @@ Each milestone ends with: full test suite, `ruff check`, `ruff format --check`,
 
 | Milestone | Status | Verified |
 |---|---|---|
-| M0 Scaffold | in progress | |
-| M1 Core | pending | |
-| M2 ML/judge | pending | |
-| M3 SDK | pending | |
-| M4 MCP gateway | pending | |
-| M5 LLM gateway | pending | |
-| M6 Control plane | pending | |
-| M7 Dashboard | pending | |
-| M8 Enterprise | pending | |
-| M9 Benchmark | pending | |
-| M10 Deploy/CI | pending | |
-| M11 Docs | pending | |
+| M0 Scaffold | done | packaging, lint/type/security tooling |
+| M1 Core | done | unit + Hypothesis property tests; 91% core coverage; `mypy --strict` clean |
+| M2 ML/judge | done | ELECTRA-small int8 ONNX: test F1 0.935, AUROC 0.985, FPR 9.0% ([report](ml/reports/injection-classifier-v1.md)); judge tested against a stubbed provider |
+| M3 SDK | done | e2e with real OpenAI/Anthropic SDK clients and LangChain, LlamaIndex, Agents SDK runners (scripted model) |
+| M4 MCP gateway | done | e2e: official MCP client -> gateway -> real local MCP servers, stdio and HTTP |
+| M5 LLM gateway | done | integration tests incl. streaming; overhead measured (below) |
+| M6 Control plane | done | API tests: auth, CSRF, RBAC, tenant isolation, audit tamper detection, migrations |
+| M7 Dashboard | done | route tests, XSS escaping, CSRF; visually checked in Edge (dark/light/mobile) |
+| M8 Enterprise | done | OIDC against a local IdP, Slack reference signature vector, syslog/webhook delivery |
+| M9 Benchmark | **not started** | waiting on the choice of base suite (see below) |
+| M10 Deploy/CI | done, partly unverified | Dockerfile, compose, Helm, CI/release workflows written; image and chart not built here |
+| M11 Docs | not started | |
+
+### Measured performance (this machine: Core Ultra 5 125H laptop on battery, ~1.2 GHz)
+
+- ML classifier, int8, 4 threads, p95: 22 ms @ 64 tokens, 46 ms @ 128, 95 ms @ 256.
+- LLM gateway own overhead (excludes upstream), heuristic + taint + policy:
+  p95 9 ms at concurrency 1, 14 ms at 4, 34 ms at 16 in one process (queuing on the GIL).
+  The LLM gateway is stateless; scale with `--workers` / replicas to keep p95 under 30 ms.
 
 ## 4. Known gaps / environment constraints
 
-- The build machine has **no Docker** and **no LLM API keys**. Consequences:
-  - Postgres/Redis integration tests are written and wired into CI (service containers) but are skipped locally. Locally the suite runs against SQLite and an in-memory rate limiter.
-  - Live-model e2e tests and live benchmark runs are implemented and gated on `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`; they have not been executed here. Committed benchmark numbers come from replay mode.
-  - Docker images and the Helm chart are written but not built or deployed here.
+- **Benchmark (M9) not built.** Generating a large attack corpus was halted; the plan is to build
+  the replay/live harness on an established public suite (e.g. AgentDojo or InjecAgent).
+- The build machine has **no Docker, no Helm binary and no LLM API keys**:
+  - Postgres/Redis tests are wired into CI service containers and skipped locally (SQLite locally).
+  - Docker image, compose stack and Helm chart are linted/built only in CI.
+  - Live-model e2e runs need `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`; not executed here.
+- DeBERTa-v3 was not trainable on this CPU; the classifier is English-only ELECTRA-small and
+  skips texts under 4 words (it over-flags very short inputs).
+- The MCP gateway keeps per-session taint state in memory: multiple replicas need sticky sessions.
