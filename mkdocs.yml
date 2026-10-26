@@ -1,0 +1,76 @@
+site_name: AgentGuard
+site_description: Runtime security for LLM agents - stop indirect prompt injection and unauthorized tool use.
+site_url: https://alexm2025.github.io/agentguard/
+repo_url: https://github.com/Alexm2025/agentguard
+repo_name: Alexm2025/agentguard
+edit_uri: edit/main/docs/
+copyright: AgentGuard is open core - Apache-2.0 outside ee/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+  icon: { logo: material/shield-check, repo: fontawesome/brands/github }
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.tabs.link
+    - search.highlight
+
+hooks:
+  - docs/hooks.py
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.details
+  - pymdownx.tabbed: { alternate_style: true }
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets: { check_paths: true }
+  - pymdownx.superfences:
+      custom_fences:
+        - { name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }
+
+nav:
+  - Overview: index.md
+  - Getting started:
+      - Install: getting-started/install.md
+      - Python SDK: getting-started/sdk.md
+      - Framework integrations: getting-started/frameworks.md
+      - MCP gateway: getting-started/mcp-gateway.md
+      - LLM API gateway: getting-started/llm-gateway.md
+      - Control plane: getting-started/control-plane.md
+  - Concepts:
+      - Architecture: concepts/architecture.md
+      - Provenance and taint: concepts/provenance.md
+      - Detectors: concepts/detectors.md
+      - Approvals: concepts/approvals.md
+  - Reference:
+      - Policy guide: reference/policy.md
+      - Policy schema: reference/policy-schema.md
+      - Configuration: reference/configuration.md
+      - REST API: reference/api.md
+      - CLI: reference/cli.md
+  - Operations:
+      - Deployment: operations/deployment.md
+      - Performance: operations/performance.md
+  - Security:
+      - Threat model: security/threat-model.md
+      - Disclosure policy: security/disclosure.md
+  - ML classifier: ml.md
+  - Benchmark: benchmark.md
+  - Limitations: limitations.md
