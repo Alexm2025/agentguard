@@ -1,0 +1,15 @@
+# Gateway configuration used by docker-compose. See src/agentguard/gateway/config.py for all options.
+pins_file: /tmp/agentguard-pins.json
+auth:
+  mode: control_plane          # validate X-AgentGuard-Key against the control plane
+control_plane:
+  url: http://server:8000
+  token_env: AGENTGUARD_SERVICE_TOKEN
+mcp:
+  on_poisoned_tool: remove
+  on_changed_tool: remove
+  servers: []                  # add your MCP servers: - { name: github, url: https://..., headers: {...} }
+llm:
+  openai_base_url: https://api.openai.com
+  anthropic_base_url: https://api.anthropic.com
+  strict: false

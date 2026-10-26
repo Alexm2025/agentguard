@@ -1,0 +1,85 @@
+# Full self-hosted stack: control plane + LLM gateway + MCP gateway + Postgres + Redis.
+#
+#   cp deploy/.env.example deploy/.env   # then edit the secrets
+#   docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+#
+# Dashboard: http://localhost:8000   LLM gateway: http://localhost:8200   MCP gateway: http://localhost:8100
+
+x-agentguard: &agentguard
+  build: { context: .., args: { WITH_EE: "${WITH_EE:-0}" } }
+  image: ${AGENTGUARD_IMAGE:-agentguard:local}
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  environment: &env
+    AGENTGUARD_ENV: production
+    AGENTGUARD_DATABASE_URL: postgresql+psycopg://agentguard:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/agentguard
+    AGENTGUARD_REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379/0
+    AGENTGUARD_SECRET_KEY: ${AGENTGUARD_SECRET_KEY:?set AGENTGUARD_SECRET_KEY (>= 32 chars)}
+    AGENTGUARD_SERVICE_TOKEN: ${AGENTGUARD_SERVICE_TOKEN:?set AGENTGUARD_SERVICE_TOKEN}
+    AGENTGUARD_PUBLIC_URL: ${AGENTGUARD_PUBLIC_URL:-http://localhost:8000}
+  volumes:
+    - ${AGENTGUARD_MODEL_HOST_DIR:-./models}:/models:ro
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agentguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: agentguard
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U agentguard"], interval: 5s, retries: 20 }
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    volumes: [redisdata:/data]
+    healthcheck: { test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"], interval: 5s, retries: 20 }
+
+  server:
+    <<: *agentguard
+    command: ["server", "run", "--migrate"]
+    environment:
+      <<: *env
+      AGENTGUARD_PORT: "8000"
+      AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL: ${AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL:-}
+      AGENTGUARD_BOOTSTRAP_ADMIN_PASSWORD: ${AGENTGUARD_BOOTSTRAP_ADMIN_PASSWORD:-}
+    ports: ["8000:8000"]
+    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy } }
+
+  llm-gateway:
+    <<: *agentguard
+    command: ["gateway", "llm", "--config", "/config/gateway.yaml"]
+    environment:
+      <<: *env
+      AGENTGUARD_PORT: "8200"
+      AGENTGUARD_CONTROL_PLANE_URL: http://server:8000
+      AGENTGUARD_API_KEY: ${AGENTGUARD_GATEWAY_API_KEY:-}
+    volumes:
+      - ./gateway.yaml:/config/gateway.yaml:ro
+      - ${AGENTGUARD_MODEL_HOST_DIR:-./models}:/models:ro
+    ports: ["8200:8200"]
+    depends_on: [server]
+
+  mcp-gateway:
+    <<: *agentguard
+    command: ["gateway", "mcp-http", "--config", "/config/gateway.yaml"]
+    environment:
+      <<: *env
+      AGENTGUARD_PORT: "8100"
+      AGENTGUARD_CONTROL_PLANE_URL: http://server:8000
+      AGENTGUARD_API_KEY: ${AGENTGUARD_GATEWAY_API_KEY:-}
+    volumes:
+      - ./gateway.yaml:/config/gateway.yaml:ro
+      - ${AGENTGUARD_MODEL_HOST_DIR:-./models}:/models:ro
+    ports: ["8100:8100"]
+    depends_on: [server]
+
+volumes:
+  pgdata:
+  redisdata:

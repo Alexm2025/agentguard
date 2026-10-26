@@ -21,3 +21,4 @@ sbom*.json
 
 ml/.cache/
 ml/artifacts/
+.demo/
