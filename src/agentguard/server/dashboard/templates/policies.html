@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Policies{% endblock %}
+{% block content %}
+<div class="row-between"><h1>Policies</h1>{% if p.can("policies:write") %}<a class="button" href="/policies/new">New policy</a>{% endif %}</div>
+<table class="data"><thead><tr><th>Name</th><th>Scope</th><th>Active revision</th></tr></thead><tbody>
+{% for pol in policies %}<tr><td><a href="/policies/{{ pol.id }}">{{ pol.name }}</a></td><td>{{ pol.project_id or "organization" }}</td><td>{{ pol.active_revision or "-" }}</td></tr>
+{% else %}<tr><td colspan="3" class="muted">No policies yet; SDKs and gateways fall back to their local or built-in default policy.</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

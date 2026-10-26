@@ -1,0 +1,46 @@
+:root { --bg:#f7f8fa; --fg:#1d2330; --muted:#6b7385; --card:#fff; --line:#e3e6ec; --accent:#2f5bea;
+  --block:#c62828; --approve:#b26a00; --redact:#6a1b9a; --allow:#2e7d32; }
+@media (prefers-color-scheme: dark) { :root { --bg:#12151b; --fg:#e6e9ef; --muted:#9aa3b5; --card:#1a1e26; --line:#2a303b; --accent:#7d9bff; } }
+* { box-sizing: border-box; }
+body { margin:0; font:14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); }
+main { max-width:1200px; margin:0 auto; padding:16px; }
+a { color:var(--accent); }
+code, pre { font-family: ui-monospace, "Cascadia Code", Menlo, monospace; font-size:12.5px; }
+pre { background:var(--bg); border:1px solid var(--line); padding:10px; overflow:auto; max-height:420px; white-space:pre-wrap; word-break:break-word; }
+.top { display:flex; gap:24px; align-items:center; padding:10px 16px; background:var(--card); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.brand { font-weight:700; text-decoration:none; color:var(--fg); }
+.top nav { display:flex; gap:16px; flex:1; flex-wrap:wrap; }
+.top nav a { text-decoration:none; color:var(--muted); }
+.top nav a[aria-current="page"] { color:var(--fg); font-weight:600; }
+.who { display:flex; gap:8px; align-items:center; color:var(--muted); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin:12px 0; }
+.card.warn { border-left:4px solid var(--approve); } .card.ok { border-left:4px solid var(--allow); }
+.narrow { max-width:380px; margin:60px auto; }
+.grid2 { display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:12px; }
+.row-between { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+table.data { width:100%; border-collapse:collapse; background:var(--card); }
+table.data th, table.data td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+table.data.compact td, table.data.compact th { padding:4px 6px; }
+tr.current { background:rgba(47,91,234,.08); }
+.why { max-width:420px; color:var(--muted); }
+.badge { display:inline-block; padding:1px 7px; border-radius:10px; font-size:11.5px; font-weight:600; color:#fff; background:var(--muted); }
+.badge.block, .badge.denied { background:var(--block); } .badge.require_approval, .badge.pending { background:var(--approve); }
+.badge.redact { background:var(--redact); } .badge.allow, .badge.approved { background:var(--allow); } .badge.expired { background:var(--muted); }
+label { display:block; margin:6px 0; } label.check { display:inline-block; margin-right:10px; }
+form.inline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } form.inline label { display:inline-flex; gap:6px; align-items:center; }
+input[type=text], input[type=email], input[type=password], select, textarea { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); width:100%; }
+form.inline input, form.inline select { width:auto; }
+textarea { font-family: ui-monospace, Menlo, monospace; font-size:12.5px; }
+button, .button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; text-decoration:none; display:inline-block; }
+button.secondary, .button.secondary { background:transparent; color:var(--accent); }
+button.danger { background:var(--block); border-color:var(--block); }
+button.link { background:none; border:none; color:var(--accent); padding:0; }
+.error { color:var(--block); } .ok { color:var(--allow); } .muted { color:var(--muted); }
+.stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin:12px 0; }
+.stat { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px; }
+.stat .num { display:block; font-size:26px; font-weight:700; } .stat .label { color:var(--muted); }
+dl.meta { display:grid; grid-template-columns: max-content 1fr; gap:4px 16px; }
+dl.meta dt { color:var(--muted); } dl.meta dd { margin:0; }
+ol.chain li { margin:4px 0; }
+pre.key { font-size:14px; }
+.foot { text-align:center; color:var(--muted); padding:24px; font-size:12px; }

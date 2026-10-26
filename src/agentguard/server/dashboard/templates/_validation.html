@@ -1,0 +1,2 @@
+{% if errors %}<div class="error" role="alert"><strong>{{ errors|length }} problem{{ "s" if errors|length != 1 }}:</strong><ul>{% for e in errors %}<li><code>{{ e }}</code></li>{% endfor %}</ul></div>
+{% else %}<p class="ok">Policy is valid.</p>{% endif %}

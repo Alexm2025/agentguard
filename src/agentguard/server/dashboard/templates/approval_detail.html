@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Approval {{ a.id }}{% endblock %}
+{% block content %}
+<p><a href="/approvals">&larr; Approvals</a></p>
+<h1>Approval for <code>{{ a.tool }}</code> <span class="badge {{ a.status }}">{{ a.status }}</span></h1>
+{% if a.taint_chain %}<section class="card warn"><h2>Taint chain</h2><ol class="chain">{% for c in a.taint_chain %}<li><code>{{ c }}</code></li>{% endfor %}</ol></section>{% endif %}
+<section class="card"><h2>Why</h2><ul>{% for r in a.reasons or [] %}<li>{{ r.message }}</li>{% endfor %}</ul></section>
+<section class="card"><h2>Arguments</h2><pre>{{ a.arguments|tojson_pretty }}</pre></section>
+{% if a.status == "pending" and p.can("approvals:resolve") %}
+<form method="post" action="/approvals/{{ a.id }}/resolve" class="card">
+  <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+  <label>Note <input type="text" name="note" maxlength="1000"></label>
+  <button name="decision" value="approve" type="submit">Approve</button>
+  <button name="decision" value="deny" type="submit" class="danger">Deny</button>
+</form>
+{% elif a.resolved_by %}<p class="muted">Resolved by {{ a.resolved_by }} via {{ a.channel }} at {{ a.resolved_at }}. {{ a.resolution_note }}</p>{% endif %}
+<p><a href="/events/{{ a.event_id }}">View triggering event</a></p>
+{% endblock %}

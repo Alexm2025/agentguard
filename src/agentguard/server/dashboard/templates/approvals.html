@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Approvals{% endblock %}
+{% block content %}
+<h1>Approval queue</h1>
+<table class="data">
+  <thead><tr><th>Requested</th><th>Tool</th><th>Why</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+  <tbody id="pending-rows" hx-get="/approvals" hx-select="#pending-rows > tr" hx-trigger="every 5s" hx-swap="innerHTML">
+  {% for a in pending %}{% include "_approval_row.html" %}{% else %}<tr><td colspan="6" class="muted">Nothing waiting for review.</td></tr>{% endfor %}
+  </tbody>
+</table>
+<h2>Recent decisions</h2>
+<table class="data compact">
+  <thead><tr><th>Requested</th><th>Tool</th><th>Status</th><th>By</th><th>Channel</th></tr></thead>
+  <tbody>{% for a in history %}<tr><td><a href="/approvals/{{ a.id }}">{{ a.created_at[:19] }}</a></td><td><code>{{ a.tool }}</code></td><td><span class="badge {{ a.status }}">{{ a.status }}</span></td><td>{{ a.resolved_by or "-" }}</td><td>{{ a.channel or "-" }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "allowScriptTags": false}'>
+  <title>{% block title %}AgentGuard{% endblock %} · AgentGuard</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body {% if p and p.csrf_token %}hx-headers='{"X-CSRF-Token": "{{ p.csrf_token }}"}'{% endif %}>
+{% if p %}
+<header class="top">
+  <a class="brand" href="/events">AgentGuard</a>
+  <nav>
+    <a href="/events" {% if request.url.path.startswith('/events') %}aria-current="page"{% endif %}>Events</a>
+    <a href="/approvals" {% if request.url.path.startswith('/approvals') %}aria-current="page"{% endif %}>Approvals</a>
+    <a href="/policies" {% if request.url.path.startswith('/policies') %}aria-current="page"{% endif %}>Policies</a>
+    <a href="/metrics" {% if request.url.path.startswith('/metrics') %}aria-current="page"{% endif %}>Metrics</a>
+    <a href="/settings" {% if request.url.path.startswith('/settings') %}aria-current="page"{% endif %}>Settings</a>
+  </nav>
+  <form method="post" action="/logout" class="who">
+    <span>{{ p.display }} · {{ p.role }}</span>
+    <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+    <button class="link" type="submit">Sign out</button>
+  </form>
+</header>
+{% endif %}
+<main>{% block content %}{% endblock %}</main>
+<footer class="foot">AgentGuard {{ features.edition }} edition</footer>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<tr id="apr-{{ a.id }}">
+  <td><a href="/approvals/{{ a.id }}">{{ a.created_at[:19] }}</a></td>
+  <td><code>{{ a.tool }}</code></td>
+  <td class="why">{% for r in (a.reasons or [])[:2] %}{{ r.message }}{% if not loop.last %}; {% endif %}{% endfor %}{% if a.taint_chain %}<br><small><code>{{ a.taint_chain[0] }}</code></small>{% endif %}</td>
+  <td>{{ a.expires_at[:19] }}</td>
+  <td><span class="badge {{ a.status }}">{{ a.status }}</span>{% if error %} <span class="error">{{ error }}</span>{% endif %}</td>
+  <td>
+    {% if a.status == "pending" and p.can("approvals:resolve") %}
+    <form class="inline" hx-post="/approvals/{{ a.id }}/resolve" hx-target="#apr-{{ a.id }}" hx-swap="outerHTML" method="post" action="/approvals/{{ a.id }}/resolve">
+      <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+      <button name="decision" value="approve" type="submit">Approve</button>
+      <button name="decision" value="deny" type="submit" class="danger">Deny</button>
+    </form>
+    {% endif %}
+  </td>
+</tr>

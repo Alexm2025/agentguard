@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Event {{ ev.id }}{% endblock %}
+{% block content %}
+<p><a href="/events">&larr; Events</a></p>
+<h1>{% if ev.action %}<span class="badge {{ ev.action|lower }}">{{ ev.action }}</span>{% endif %} <code>{{ ev.tool or ev.type }}</code></h1>
+<dl class="meta">
+  <dt>Event</dt><dd><code>{{ ev.id }}</code></dd>
+  <dt>Time</dt><dd>{{ ev.timestamp.isoformat() }}</dd>
+  <dt>Source</dt><dd>{{ ev.source }}{% if d.server %} · server <code>{{ d.server }}</code>{% endif %}</dd>
+  <dt>Session</dt><dd><code>{{ ev.session_id or "-" }}</code></dd>
+  <dt>Risk</dt><dd>{{ ev.risk or "-" }}</dd>
+  <dt>Policy</dt><dd>{% if d.policy %}{{ d.policy.name }} r{{ d.policy.revision }}{% else %}-{% endif %}</dd>
+  {% if d.approval_id %}<dt>Approval</dt><dd><a href="/approvals/{{ d.approval_id }}">{{ d.approval_id }}</a></dd>{% endif %}
+</dl>
+
+{% if d.taint_chain %}
+<section class="card warn">
+  <h2>Taint chain</h2>
+  <ol class="chain">{% for c in d.taint_chain %}<li><code>{{ c }}</code></li>{% endfor %}</ol>
+</section>
+{% endif %}
+
+{% if d.reasons %}
+<section class="card">
+  <h2>Why</h2>
+  <ul>{% for r in d.reasons %}<li><span class="badge {{ r.action|lower }}">{{ r.action }}</span> {{ r.message }}{% if r.rule_id %} <small class="muted">rule <code>{{ r.rule_id }}</code></small>{% endif %}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+{% if d.reason %}<section class="card warn"><h2>Reason</h2><p>{{ d.reason }}</p></section>{% endif %}
+
+<div class="grid2">
+<section class="card">
+  <h2>Arguments <small class="muted">(secrets masked)</small></h2>
+  <pre>{{ d.arguments|tojson_pretty }}</pre>
+</section>
+<section class="card">
+  <h2>Evidence</h2>
+  {% if d.taint_matches %}
+  <table class="data compact"><thead><tr><th>Argument</th><th>Source</th><th>Match</th><th>Score</th><th>In trusted?</th></tr></thead><tbody>
+  {% for m in d.taint_matches %}<tr><td><code>{{ m.arg_path }}</code></td><td>{{ m.source }}</td><td>{{ m.kind }}</td><td>{{ m.score }}</td><td>{{ "yes" if m.also_in_trusted else "no" }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  {% if d.detections %}
+  <h3>Detectors</h3>
+  <table class="data compact"><thead><tr><th>Layer</th><th>Score</th><th>Flagged</th><th>Rules</th><th>ms</th></tr></thead><tbody>
+  {% for x in d.detections %}<tr><td>{{ x.detector }}</td><td>{{ x.score }}</td><td>{{ "yes" if x.flagged else "no" }}</td><td>{{ (x.rules or [])|join(", ") }}</td><td>{{ x.latency_ms }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  {% if d.dlp %}<h3>DLP</h3><ul>{% for f in d.dlp %}<li><code>{{ f.pattern }}</code> in <code>{{ f.arg_path or "result" }}</code>: {{ f.masked }}</li>{% endfor %}</ul>{% endif %}
+</section>
+</div>
+
+{% if timeline %}
+<section class="card">
+  <h2>Session timeline</h2>
+  <table class="data compact"><tbody>
+  {% for t in timeline %}<tr {% if t.id == ev.id %}class="current"{% endif %}><td>{{ t.timestamp.strftime("%H:%M:%S") }}</td><td>{{ t.type }}</td><td><a href="/events/{{ t.id }}"><code>{{ t.tool or "" }}</code></a></td><td>{% if t.action %}<span class="badge {{ t.action|lower }}">{{ t.action }}</span>{% endif %}</td><td>{{ t.data.source_ref or "" }}</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endif %}
+
+{% if p.can("fp:write") and ev.action in ("BLOCK", "REQUIRE_APPROVAL", "REDACT") %}
+<section class="card">
+  <h2>False positive?</h2>
+  {% for f in fps %}<p class="muted">Reported by {{ f.reporter }}: {{ f.note }}</p>{% endfor %}
+  <form method="post" action="/events/{{ ev.id }}/false-positive">
+    <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+    <label>Note <input type="text" name="note" maxlength="2000" placeholder="Why was this legitimate?"></label>
+    <button type="submit" class="secondary">Report false positive</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

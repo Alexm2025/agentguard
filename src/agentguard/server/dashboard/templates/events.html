@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Events{% endblock %}
+{% block content %}
+<div class="row-between">
+  <h1>Live event feed</h1>
+  <form method="get" action="/events" class="inline">
+    <label>Action
+      <select name="action">
+        {% for a in ["", "BLOCK", "REQUIRE_APPROVAL", "REDACT", "ALLOW"] %}
+        <option value="{{ a }}" {% if a == action %}selected{% endif %}>{{ a or "All" }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Filter</button>
+  </form>
+</div>
+<table class="data">
+  <thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Tool</th><th>Action</th><th>Why</th><th>Latency</th></tr></thead>
+  <tbody id="feed" hx-get="/events/feed?action={{ action }}" hx-trigger="every 3s" hx-swap="innerHTML">
+    {% include "_event_rows.html" %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+{% if new_key %}<section class="card warn"><h2>New API key</h2><p>Copy it now; it will not be shown again.</p><pre class="key">{{ new_key }}</pre></section>{% endif %}
+{% if p.can("keys:manage") %}
+<section class="card">
+  <h2>API keys</h2>
+  <table class="data compact"><thead><tr><th>Name</th><th>Prefix</th><th>Scopes</th><th>Last used</th><th></th></tr></thead><tbody>
+  {% for k in keys %}<tr><td>{{ k.name }}</td><td><code>{{ k.prefix }}…</code></td><td>{{ k.scopes|join(", ") }}</td><td>{{ k.last_used_at.strftime("%Y-%m-%d %H:%M") if k.last_used_at else "never" }}</td>
+  <td>{% if k.revoked_at %}<span class="badge block">revoked</span>{% else %}<form method="post" action="/settings/keys/{{ k.id }}/revoke" class="inline"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}"><button class="danger" type="submit">Revoke</button></form>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+  <form method="post" action="/settings/keys" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+    <label>Name <input type="text" name="name" required maxlength="200"></label>
+    {% for s in ["ingest", "read", "approve", "gateway", "admin"] %}<label class="check"><input type="checkbox" name="scopes" value="{{ s }}" {% if s == "ingest" %}checked{% endif %}> {{ s }}</label>{% endfor %}
+    <button type="submit">Create key</button>
+  </form>
+</section>
+{% endif %}
+{% if members %}
+<section class="card"><h2>Members</h2><table class="data compact"><tbody>{% for m, u in members %}<tr><td>{{ u.email }}</td><td>{{ m.role }}</td></tr>{% endfor %}</tbody></table>
+<p class="muted">Manage members with the REST API (<code>/api/v1/members</code>).</p></section>
+{% endif %}
+{% if verification %}
+<section class="card {{ 'ok' if verification.valid else 'warn' }}"><h2>Audit log</h2>
+<p>{{ verification.entries }} entries · chain {{ "verified" if verification.valid else "BROKEN at entry " ~ verification.broken_at ~ " (" ~ verification.reason ~ ")" }}</p>
+<p><a href="/api/v1/audit/export">Export JSON</a></p></section>
+{% endif %}
+{% endblock %}
