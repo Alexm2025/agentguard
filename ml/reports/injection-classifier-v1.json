@@ -1,0 +1,288 @@
+{
+  "model": {
+    "name": "injection-classifier-v1",
+    "base_model": {
+      "repo": "google/electra-small-discriminator",
+      "revision": "fa8239aadc095e9164941d05878b98afe9b953c3",
+      "license": "Apache-2.0",
+      "files": [
+        "config.json",
+        "pytorch_model.bin",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "vocab.txt"
+      ]
+    },
+    "labels": [
+      "benign",
+      "injection"
+    ],
+    "injection_label_index": 1,
+    "max_length": 128,
+    "dataset_digest": "27f9f8c882d43aed8a1d302fd98d877a908bd07920412c9b00a2f68ab7b05c7e",
+    "seed": 13,
+    "epochs": 2,
+    "lr": 5e-05,
+    "batch_size": 16,
+    "freeze_embeddings": false,
+    "trained_at": "2026-10-26T19:17:39Z",
+    "sources": [
+      {
+        "id": "deepset",
+        "repo": "deepset/prompt-injections",
+        "revision": "4f61ecb038e9c3fb77e21034b22511b523772cdd",
+        "license": "Apache-2.0"
+      },
+      {
+        "id": "jailbreak_classification",
+        "repo": "jackhhao/jailbreak-classification",
+        "revision": "2f2ceeb39658696fd3f462403562b6eea5306287",
+        "license": "Apache-2.0"
+      },
+      {
+        "id": "multilingual_injections",
+        "repo": "yanismiraoui/prompt_injections",
+        "revision": "bd55359f2f332afc35f277ac3dd08f7111b024c9",
+        "license": "Apache-2.0"
+      },
+      {
+        "id": "gandalf",
+        "repo": "Lakera/gandalf_ignore_instructions",
+        "revision": "04737b65e90a6794ec227012e4a255a7def6344b",
+        "license": "MIT"
+      },
+      {
+        "id": "spml",
+        "repo": "reshabhs/SPML_Chatbot_Prompt_Injection",
+        "revision": "02ce8084e979bc7d4c24ee35d22ecb7f2db96ff5",
+        "license": "MIT"
+      },
+      {
+        "id": "squad",
+        "repo": "rajpurkar/squad",
+        "revision": "7b6d24c440a36b6815f21b70d25016731768db1f",
+        "license": "CC-BY-SA-4.0"
+      }
+    ],
+    "quantization": "int8",
+    "recommended_threshold": 0.875
+  },
+  "chosen": "int8",
+  "results": {
+    "fp32": {
+      "threshold": 0.64,
+      "validation@thr": {
+        "precision": 0.9773013871374527,
+        "recall": 0.9711779448621554,
+        "f1": 0.9742300439974858,
+        "fpr": 0.01956521739130435,
+        "n": 1718,
+        "auroc": 0.9910952653372562
+      },
+      "test@0.5": {
+        "precision": 0.8952819332566168,
+        "recall": 0.9676616915422885,
+        "f1": 0.9300657501494322,
+        "fpr": 0.09816612729234088,
+        "n": 1731,
+        "auroc": 0.98541207125108
+      },
+      "test@thr": {
+        "precision": 0.9034883720930232,
+        "recall": 0.9664179104477612,
+        "f1": 0.9338942307692307,
+        "fpr": 0.0895361380798274,
+        "n": 1731,
+        "auroc": 0.98541207125108
+      },
+      "test_per_source@thr": {
+        "deepset": {
+          "n": 68,
+          "positives": 27,
+          "accuracy": 0.9265
+        },
+        "gandalf": {
+          "n": 101,
+          "positives": 101,
+          "accuracy": 0.9901
+        },
+        "hard_negative": {
+          "n": 80,
+          "positives": 0,
+          "accuracy": 0.6
+        },
+        "indirect_aug": {
+          "n": 624,
+          "positives": 312,
+          "accuracy": 0.9119
+        },
+        "jailbreak_classification": {
+          "n": 199,
+          "positives": 66,
+          "accuracy": 0.9598
+        },
+        "multilingual_injections": {
+          "n": 98,
+          "positives": 98,
+          "accuracy": 1.0
+        },
+        "spml": {
+          "n": 397,
+          "positives": 200,
+          "accuracy": 0.9798
+        },
+        "squad": {
+          "n": 164,
+          "positives": 0,
+          "accuracy": 0.9939
+        }
+      },
+      "size_mb": 54.4
+    },
+    "int8": {
+      "threshold": 0.875,
+      "validation@thr": {
+        "precision": 0.9772727272727273,
+        "recall": 0.9699248120300752,
+        "f1": 0.9735849056603774,
+        "fpr": 0.01956521739130435,
+        "n": 1718,
+        "auroc": 0.9900743707093821
+      },
+      "test@0.5": {
+        "precision": 0.8803611738148984,
+        "recall": 0.9701492537313433,
+        "f1": 0.9230769230769231,
+        "fpr": 0.11434735706580366,
+        "n": 1731,
+        "auroc": 0.9846573497131386
+      },
+      "test@thr": {
+        "precision": 0.9036004645760743,
+        "recall": 0.9676616915422885,
+        "f1": 0.9345345345345345,
+        "fpr": 0.0895361380798274,
+        "n": 1731,
+        "auroc": 0.9846573497131386
+      },
+      "test_per_source@thr": {
+        "deepset": {
+          "n": 68,
+          "positives": 27,
+          "accuracy": 0.9265
+        },
+        "gandalf": {
+          "n": 101,
+          "positives": 101,
+          "accuracy": 0.9901
+        },
+        "hard_negative": {
+          "n": 80,
+          "positives": 0,
+          "accuracy": 0.5625
+        },
+        "indirect_aug": {
+          "n": 624,
+          "positives": 312,
+          "accuracy": 0.9167
+        },
+        "jailbreak_classification": {
+          "n": 199,
+          "positives": 66,
+          "accuracy": 0.9648
+        },
+        "multilingual_injections": {
+          "n": 98,
+          "positives": 98,
+          "accuracy": 1.0
+        },
+        "spml": {
+          "n": 397,
+          "positives": 200,
+          "accuracy": 0.9824
+        },
+        "squad": {
+          "n": 164,
+          "positives": 0,
+          "accuracy": 0.9878
+        }
+      },
+      "size_mb": 14.1
+    }
+  },
+  "latency_cpu": {
+    "64_tokens": {
+      "p50_ms": 16.35,
+      "p95_ms": 22.47,
+      "max_ms": 25.84
+    },
+    "128_tokens": {
+      "p50_ms": 37.16,
+      "p95_ms": 46.34,
+      "max_ms": 52.64
+    },
+    "256_tokens": {
+      "p50_ms": 67.21,
+      "p95_ms": 94.8,
+      "max_ms": 105.45
+    },
+    "512_tokens_2_chunks": {
+      "p50_ms": 130.01,
+      "p95_ms": 167.1,
+      "max_ms": 185.37
+    }
+  },
+  "machine": {
+    "cpu_count": 18,
+    "onnx_intra_op_threads": 4
+  },
+  "dataset_sizes": {
+    "train": 13789,
+    "validation": 1718,
+    "test": 1731
+  },
+  "dataset_stats": {
+    "train": {
+      "deepset:0": 319,
+      "deepset:1": 210,
+      "gandalf:1": 799,
+      "hard_negative:0": 640,
+      "indirect_aug:0": 2500,
+      "indirect_aug:1": 2500,
+      "jailbreak_classification:0": 1058,
+      "jailbreak_classification:1": 518,
+      "multilingual_injections:1": 779,
+      "spml:0": 1566,
+      "spml:1": 1600,
+      "squad:0": 1300
+    },
+    "validation": {
+      "deepset:0": 39,
+      "deepset:1": 26,
+      "gandalf:1": 99,
+      "hard_negative:0": 80,
+      "indirect_aug:0": 312,
+      "indirect_aug:1": 312,
+      "jailbreak_classification:0": 132,
+      "jailbreak_classification:1": 64,
+      "multilingual_injections:1": 97,
+      "spml:0": 195,
+      "spml:1": 200,
+      "squad:0": 162
+    },
+    "test": {
+      "deepset:0": 41,
+      "deepset:1": 27,
+      "gandalf:1": 101,
+      "hard_negative:0": 80,
+      "indirect_aug:0": 312,
+      "indirect_aug:1": 312,
+      "jailbreak_classification:0": 133,
+      "jailbreak_classification:1": 66,
+      "multilingual_injections:1": 98,
+      "spml:0": 197,
+      "spml:1": 200,
+      "squad:0": 164
+    }
+  }
+}

@@ -1,0 +1,82 @@
+# Training data manifest for the AgentGuard injection classifier.
+# Every source is pinned to an exact Hugging Face revision so the build is reproducible.
+# Only sources with an explicit, permissive license are used. Sources whose license is
+# undeclared on the Hub (e.g. xTRam1/safe-guard-prompt-injection,
+# geekyrakshit/prompt-injection-dataset) are deliberately excluded.
+
+# Base model choice (measured on the build machine, see ml/README.md):
+# * DeBERTa-v3-small: disentangled-attention backward pass impractically slow on CPU with the torch
+#   build available here (one 16x128 step did not finish in 10 minutes).
+# * DistilBERT-multilingual: trainable, but int8 ONNX p95 was 128 ms at 128 tokens - over budget.
+# * ELECTRA-small-discriminator: ~4.5x fewer FLOPs, strong classification fine-tuning results;
+#   English-only, so multilingual coverage relies on the heuristic layer.
+base_model:
+  repo: google/electra-small-discriminator
+  revision: fa8239aadc095e9164941d05878b98afe9b953c3
+  license: Apache-2.0
+  files: [config.json, pytorch_model.bin, tokenizer.json, tokenizer_config.json, vocab.txt]
+
+sources:
+  - id: deepset
+    repo: deepset/prompt-injections
+    revision: 4f61ecb038e9c3fb77e21034b22511b523772cdd
+    license: Apache-2.0
+    files:
+      - data/train-00000-of-00001-9564e8b05b4757ab.parquet
+      - data/test-00000-of-00001-701d16158af87368.parquet
+    text: text
+    label: { column: label, positive: 1 }
+    notes: English and German injections vs. benign queries.
+
+  - id: jailbreak_classification
+    repo: jackhhao/jailbreak-classification
+    revision: 2f2ceeb39658696fd3f462403562b6eea5306287
+    license: Apache-2.0
+    files: [default/jailbreak_dataset_train.csv, default/jailbreak_dataset_test.csv]
+    text: prompt
+    label: { column: type, positive: jailbreak }
+    notes: Benign class is mostly role-play persona prompts - useful hard negatives.
+
+  - id: multilingual_injections
+    repo: yanismiraoui/prompt_injections
+    revision: bd55359f2f332afc35f277ac3dd08f7111b024c9
+    license: Apache-2.0
+    files: [prompt_injections.csv]
+    text: prompt_injections
+    label: { constant: 1 }
+    notes: Multilingual injection prompts (positives only).
+
+  - id: gandalf
+    repo: Lakera/gandalf_ignore_instructions
+    revision: 04737b65e90a6794ec227012e4a255a7def6344b
+    license: MIT
+    files:
+      - data/train-00000-of-00001-ded53be747ff55cd.parquet
+      - data/validation-00000-of-00001-94481a2a09ff2fff.parquet
+      - data/test-00000-of-00001-bc92128b9288a6d1.parquet
+    text: text
+    label: { constant: 1 }
+    notes: Ignore-instructions attacks collected from the Gandalf game (positives only).
+
+  - id: spml
+    repo: reshabhs/SPML_Chatbot_Prompt_Injection
+    revision: 02ce8084e979bc7d4c24ee35d22ecb7f2db96ff5
+    license: MIT
+    files: [spml_prompt_injection.csv]
+    text: User Prompt
+    label: { column: Prompt injection, positive: 1 }
+    max_per_label: 2000
+    notes: Chatbot prompt injections against system prompts.
+
+  - id: squad
+    repo: rajpurkar/squad
+    revision: 7b6d24c440a36b6815f21b70d25016731768db1f
+    license: CC-BY-SA-4.0
+    files: [plain_text/validation-00000-of-00001.parquet]
+    text: context
+    label: { constant: 0 }
+    max_per_label: 3000
+    notes: >
+      Wikipedia paragraphs used as benign documents and as carriers for synthetic indirect
+      injections. CC-BY-SA-4.0 requires attribution; whether share-alike extends to model weights
+      is legally unsettled - review before redistributing trained weights.
