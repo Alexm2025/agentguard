@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentguard-ee"
+version = "0.1.0"
+description = "AgentGuard enterprise features: OIDC SSO, multi-organization admin, SIEM export, Slack approvals."
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dependencies = ["agentguard[server]==0.1.0", "authlib>=1.3", "cryptography>=42"]
+
+[project.entry-points."agentguard.plugins"]
+ee = "agentguard_ee:install"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agentguard_ee"]
