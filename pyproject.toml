@@ -82,6 +82,7 @@ include = ["src/agentguard", "LICENSE", "NOTICE", "README.md", "CHANGELOG.md"]
 line-length = 120
 target-version = "py311"
 src = ["src", "ee", "tests", "ml", "benchmark"]
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "ASYNC", "PL", "C4", "PT"]
