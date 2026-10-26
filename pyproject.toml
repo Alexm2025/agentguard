@@ -1,0 +1,135 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentguard"
+dynamic = ["version"]
+description = "Runtime security layer that protects LLM agents from indirect prompt injection and unauthorized tool use."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.11"
+authors = [{ name = "AgentGuard contributors" }]
+keywords = ["llm", "agents", "security", "prompt-injection", "mcp", "guardrails"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Security",
+  "Typing :: Typed",
+]
+dependencies = [
+  "pydantic>=2.7,<3",
+  "pyyaml>=6.0.1",
+  "jsonschema>=4.21",
+  "rapidfuzz>=3.9",
+  "httpx>=0.27",
+  "anyio>=4.4",
+]
+
+[project.optional-dependencies]
+ml = ["onnxruntime>=1.18", "tokenizers>=0.19", "numpy>=1.26"]
+server = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy[asyncio]>=2.0.30",
+  "alembic>=1.13",
+  "aiosqlite>=0.20",
+  "psycopg[binary]>=3.2",
+  "redis>=5.0",
+  "jinja2>=3.1.4",
+  "python-multipart>=0.0.9",
+  "itsdangerous>=2.2",
+]
+gateway = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
+telemetry = ["opentelemetry-api>=1.25", "opentelemetry-sdk>=1.25", "opentelemetry-exporter-otlp>=1.25"]
+openai = ["openai>=1.40"]
+anthropic = ["anthropic>=0.34"]
+langchain = ["langchain-core>=0.3"]
+llamaindex = ["llama-index-core>=0.11"]
+openai-agents = ["openai-agents>=0.2"]
+train = ["torch>=2.3", "transformers>=4.44", "datasets>=2.20", "scikit-learn>=1.5", "onnx>=1.16", "onnxruntime>=1.18", "accelerate>=0.33"]
+all = ["agentguard[ml,server,gateway,telemetry,openai,anthropic]"]
+
+[project.scripts]
+agentguard = "agentguard.cli:main"
+
+[project.entry-points."agentguard.plugins"]
+
+[project.urls]
+Homepage = "https://github.com/agentguard/agentguard"
+Documentation = "https://agentguard.github.io/agentguard"
+Issues = "https://github.com/agentguard/agentguard/issues"
+
+[tool.hatch.version]
+path = "src/agentguard/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentguard"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/agentguard", "LICENSE", "NOTICE", "README.md", "CHANGELOG.md"]
+
+# ---------------------------------------------------------------- tooling
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "ee", "tests", "ml", "benchmark"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "ASYNC", "PL", "C4", "PT"]
+ignore = ["PLR0913", "PLR0917", "PLR2004", "PLR0911", "PLR0912", "PLR0915", "S101", "RUF012", "PLC0415"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "PLR", "B011", "RUF001", "PT018", "E501"]
+# FastAPI dependency injection uses calls in argument defaults by design.
+"src/agentguard/server/**" = ["B008"]
+"src/agentguard/gateway/**" = ["B008"]
+"ee/**" = ["B008"]
+"benchmark/**" = ["S311", "RUF001"]
+"ml/**" = ["S311"]
+"ml/data.py" = ["S311", "E501"]
+"src/agentguard/server/settings.py" = ["E501"]
+# Regex tables and the homoglyph map read better unwrapped / with literal look-alikes.
+"src/agentguard/core/detectors/heuristic.py" = ["RUF001", "E501"]
+"src/agentguard/core/normalize.py" = ["RUF001"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+explicit_package_bases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "integration: needs Postgres/Redis (AGENTGUARD_TEST_DATABASE_URL / AGENTGUARD_TEST_REDIS_URL)",
+  "live: calls real LLM provider APIs (needs OPENAI_API_KEY or ANTHROPIC_API_KEY)",
+  "ml: needs the trained ONNX model",
+  "slow: slow tests",
+]
+filterwarnings = ["ignore::DeprecationWarning:pydantic.*"]
+
+[tool.coverage.run]
+branch = true
+source = ["agentguard"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "@overload"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
