@@ -155,7 +155,7 @@ Each milestone ends with: full test suite, `ruff check`, `ruff format --check`,
 | M8 Enterprise | done | OIDC against a local IdP, Slack reference signature vector, syslog/webhook delivery |
 | M9 Benchmark | **not started** | waiting on the choice of base suite (see below) |
 | M10 Deploy/CI | done, partly unverified | Dockerfile, compose, Helm, CI/release workflows written; image and chart not built here |
-| M11 Docs | not started | |
+| M11 Docs | done | `mkdocs build --strict` passes; published to GitHub Pages by CI |
 
 ### Measured performance (this machine: Core Ultra 5 125H laptop on battery, ~1.2 GHz)
 
