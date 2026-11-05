@@ -167,6 +167,9 @@ def create_app(
     from agentguard.server.dashboard.views import static_app
 
     app.include_router(router)
+    from agentguard.server.dashboard.accounts import router as accounts_router
+
+    app.include_router(accounts_router)
     app.include_router(dashboard_router)
     app.mount("/static", static_app(), name="static")
 

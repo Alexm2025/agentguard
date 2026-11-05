@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_icons.html" import mark %}
+{% block title %}Create your workspace{% endblock %}
+{% block topnav_actions %}<a class="button secondary" href="/login">Sign in</a>{% endblock %}
+{% block bare %}
+<main class="auth">
+  <section class="auth-card">
+    <div class="head">{{ mark("lg") }}<h1>Create your workspace</h1><p class="lead">Set up in a few minutes.</p></div>
+    {% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/signup">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Your name <input type="text" name="name" autocomplete="name" required maxlength="200" value="{{ values.name or '' }}" autofocus></label>
+      <label>Work email <input type="email" name="email" autocomplete="email" required maxlength="320" value="{{ values.email or '' }}" placeholder="you@company.com"></label>
+      <label>Organization <input type="text" name="organization" autocomplete="organization" required maxlength="200" value="{{ values.organization or '' }}" placeholder="Acme Inc."></label>
+      <label>Password <input type="password" name="password" autocomplete="new-password" required minlength="12">
+        <span class="hint">At least 12 characters.</span></label>
+      <button type="submit" class="block lg">Create workspace</button>
+    </form>
+    <p class="auth-alt">Already have an account? <a href="/login">Sign in</a></p>
+  </section>
+</main>
+{% endblock %}

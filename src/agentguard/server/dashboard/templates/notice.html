@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "_icons.html" import mark %}
+{% block title %}{{ title }}{% endblock %}
+{% block bare %}
+<main class="auth">
+  <section class="auth-card">
+    <div class="head">{{ mark("lg") }}<h1>{{ title }}</h1><p class="lead">{{ message }}</p></div>
+    {% if action %}<a class="button block lg" href="{{ action[0] }}">{{ action[1] }}</a>
+    {% else %}<p class="auth-alt"><a href="/login">Back to sign in</a></p>{% endif %}
+  </section>
+</main>
+{% endblock %}

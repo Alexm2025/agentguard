@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Get started{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Get started</span>
+    <h1>Protect your first agent</h1>
+    <p>Three steps to see AgentGuard block an injected tool call in {{ org.name if org else "your workspace" }}.</p>
+  </div>
+</div>
+
+{% set key = new_key or "ag_live_your_key" %}
+<div class="steps">
+  <section class="card step{% if has_key %} done{% endif %}">
+    <span class="num">{% if has_key %}{{ icon("check") }}{% else %}1{% endif %}</span>
+    <div class="body">
+      <div><h2>Create an API key</h2><p>Agents and gateways use an <code>ingest</code> key to send decisions to this workspace and fetch your policy.</p></div>
+      {% if new_key %}
+        <div class="notice warn"><strong>Copy this key now.</strong> It is stored only as a hash and won't be shown again.</div>
+        <pre class="key">{{ new_key }}</pre>
+      {% elif p.can("keys:manage") %}
+        <form method="post" action="/welcome/key"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+          <button type="submit">{{ icon("key") }}{% if has_key %}Create another key{% else %}Create ingest key{% endif %}</button></form>
+      {% else %}<p class="muted">Ask an admin of your organization for an ingest key.</p>{% endif %}
+    </div>
+  </section>
+
+  <section class="card step">
+    <span class="num">2</span>
+    <div class="body">
+      <div><h2>Connect your agent</h2><p>Pick the integration that fits. Each sends decisions here and waits for approvals from this console.</p></div>
+      <div class="ctabs">
+        <input type="radio" name="tab" id="t1" checked><input type="radio" name="tab" id="t2"><input type="radio" name="tab" id="t3"><input type="radio" name="tab" id="t4">
+        <div class="labels"><label for="t1">Python · OpenAI</label><label for="t2">Python · Anthropic</label><label for="t3">MCP gateway</label><label for="t4">LLM API gateway</label></div>
+        <div class="panel p1"><pre>pip install "agentguard[openai] @ git+https://github.com/Alexm2025/agentguard"
+
+from openai import OpenAI
+from agentguard import Guard
+
+guard = Guard(control_plane_url="{{ base_url }}", api_key="{{ key }}")
+client = guard.wrap_openai(OpenAI())   # every tool call is now checked
+
+@guard.tool
+def send_email(to: str, body: str) -> str: ...</pre></div>
+        <div class="panel p2"><pre>pip install "agentguard[anthropic] @ git+https://github.com/Alexm2025/agentguard"
+
+from anthropic import Anthropic
+from agentguard import Guard
+
+guard = Guard(control_plane_url="{{ base_url }}", api_key="{{ key }}")
+client = guard.wrap_anthropic(Anthropic())</pre></div>
+        <div class="panel p3"><pre># In your MCP client config, wrap the server command:
+{
+  "command": "agentguard",
+  "args": ["gateway", "mcp-stdio", "--name", "filesystem", "--",
+           "npx", "-y", "@modelcontextprotocol/server-filesystem", "/data"],
+  "env": { "AGENTGUARD_CONTROL_PLANE_URL": "{{ base_url }}",
+           "AGENTGUARD_API_KEY": "{{ key }}" }
+}</pre></div>
+        <div class="panel p4"><pre># Run the gateway next to your agent, then change one URL:
+AGENTGUARD_CONTROL_PLANE_URL={{ base_url }} AGENTGUARD_API_KEY={{ key }} \
+  agentguard gateway llm --port 8200
+
+client = OpenAI(base_url="http://localhost:8200/v1",
+                default_headers={"X-AgentGuard-Key": "{{ key }}"})</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card step{% if has_events %} done{% endif %}">
+    <span class="num">{% if has_events %}{{ icon("check") }}{% else %}3{% endif %}</span>
+    <div class="body">
+      <div><h2>See it work</h2><p>Run your agent, or load four sample sessions - an injected web page, a leaked key, a normal request and a payment that needs approval - evaluated live by the engine.</p></div>
+      <div class="row">
+        {% if has_events %}<a class="button" href="/events">Open the event feed {{ icon("arrow") }}</a>
+        {% elif p.can("policies:write") %}
+        <form method="post" action="/welcome/sample"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+          <button type="submit">{{ icon("zap") }}Load sample sessions</button></form>
+        {% endif %}
+        <a class="button secondary" href="https://alexm2025.github.io/agentguard/">Read the docs</a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

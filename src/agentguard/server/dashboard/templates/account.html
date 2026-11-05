@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Account{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Account</h1><p>Your profile and sign-in security.</p></div></div>
+{% if message %}<div class="notice ok" role="status">{{ message }}</div><br>{% endif %}
+{% if error %}<div class="notice error" role="alert">{{ error }}</div><br>{% endif %}
+<div class="grid two">
+  <section class="card">
+    <div class="card-head"><h2>Profile</h2></div>
+    <div class="card-body">
+      <dl class="meta">
+        <div><dt>Name</dt><dd>{{ user.name or "—" }}</dd></div>
+        <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+      </dl>
+      <dl class="meta">
+        <div><dt>Organization</dt><dd>{{ org.name }}</dd></div>
+        <div><dt>Role</dt><dd>{{ p.role|capitalize }}</dd></div>
+      </dl>
+      <p class="muted small">Member since {{ user.created_at.strftime("%B %Y") }} · {{ sessions }} active session{{ "s" if sessions != 1 }}</p>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>{{ icon("lock") }} Change password</h2></div>
+    <div class="card-body">
+      {% if user.password_hash %}
+      <form method="post" action="/account/password">
+        <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+        <label>Current password <input type="password" name="current" autocomplete="current-password" required></label>
+        <label>New password <input type="password" name="new" autocomplete="new-password" required minlength="12"><span class="hint">At least 12 characters. Other sessions will be signed out.</span></label>
+        <button type="submit">Update password</button>
+      </form>
+      {% else %}<p class="muted">You sign in with single sign-on; manage your password with your identity provider.</p>{% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

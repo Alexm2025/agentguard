@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Runtime security for AI agents{% endblock %}
+{% block bare %}
+<main class="landing">
+  <section class="hero-l">
+    <span class="badge"><b>New</b> MCP gateway with tool-poisoning and rug-pull detection</span>
+    <h1>Stop prompt injection <span class="grad">before your agent acts</span></h1>
+    <p class="lead">AgentGuard tracks where every piece of your agent's context came from and blocks tool calls
+      that untrusted content tried to steer. One line in your SDK, a gateway in front of your MCP servers,
+      or a drop-in API proxy.</p>
+    <div class="row">
+      {% if signup %}<a class="button lg" href="/signup">Get started {{ icon("arrow") }}</a>{% endif %}
+      <a class="button lg secondary" href="/login">Sign in</a>
+    </div>
+  </section>
+
+  <div class="showcase">
+    <div class="inner">
+      <div class="caption">
+        <div class="row"><span class="pill block lg">Blocked</span><span class="tool">send_email</span><span class="risk high">high risk</span></div>
+        <span class="muted small">Example decision</span>
+      </div>
+      <div class="path">
+        <div class="node src"><div class="k">{{ icon("globe") }}Untrusted source</div><div class="v">read_web(url=https://trails.example/rmnp)</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="node arg"><div class="k">Argument · entity:email</div><div class="v">to = collector@exfil.example</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="node sink"><div class="k">Tool call</div><div class="v">send_email</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="node verdict block"><div class="k">Decision</div><div class="v">BLOCK</div></div>
+      </div>
+      <p class="chain"><code>send_email.to derived from read_web(url=https://trails.example/rmnp)</code> - the user never asked for this recipient; a hidden instruction on the page did.</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Defense in depth, decided in milliseconds</h2>
+      <p>Every tool call is checked by independent layers. Any one of them can stop an attack.</p>
+    </div>
+    <div class="grid three">
+      <div class="card feature"><div class="ico">{{ icon("layers") }}</div><h3>Provenance &amp; taint tracking</h3>
+        <p>User and system content is trusted; tool output is not. AgentGuard knows which arguments came from a web page, an email or a file - including encoded and paraphrased copies.</p></div>
+      <div class="card feature"><div class="ico">{{ icon("shield") }}</div><h3>Injection detection</h3>
+        <p>Multilingual heuristic rules, an on-device ONNX classifier and an optional LLM judge score every tool result for hidden instructions.</p></div>
+      <div class="card feature"><div class="ico">{{ icon("file") }}</div><h3>Declarative policy</h3>
+        <p>YAML rules per tool: block, redact, or require approval. Destination allowlists, rate limits and data-loss prevention for keys, cards and IDs.</p></div>
+      <div class="card feature"><div class="ico">{{ icon("check-circle") }}</div><h3>Human approvals</h3>
+        <p>Risky actions pause for a person. Approve or deny in the console, through the API, a signed webhook or Slack.</p></div>
+      <div class="card feature"><div class="ico">{{ icon("lock") }}</div><h3>Tamper-evident audit</h3>
+        <p>Every decision and every change is recorded in a hash-chained audit log you can verify and export to your SIEM.</p></div>
+      <div class="card feature"><div class="ico">{{ icon("users") }}</div><h3>Built for teams</h3>
+        <p>Organizations, roles, scoped API keys, SSO and strict tenant isolation. Self-host it or run it as a service.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Three ways in. One engine.</h2>
+      <p>Protect agents you write, agents that use MCP, and agents you can't change.</p>
+    </div>
+    <div class="grid three">
+      <div class="card feature"><div class="ico">{{ icon("code") }}</div><h3>Python SDK</h3>
+        <p>OpenAI, Anthropic, LangChain, LlamaIndex and the OpenAI Agents SDK.</p><pre>client = guard.wrap_openai(OpenAI())</pre></div>
+      <div class="card feature"><div class="ico">{{ icon("plug") }}</div><h3>MCP gateway</h3>
+        <p>Wraps any MCP server over stdio or HTTP. Removes poisoned tools.</p><pre>agentguard gateway mcp-stdio -- npx …</pre></div>
+      <div class="card feature"><div class="ico">{{ icon("globe") }}</div><h3>LLM API gateway</h3>
+        <p>OpenAI- and Anthropic-compatible proxy. Change one URL.</p><pre>base_url="https://…/v1"</pre></div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>Ship agents your security team can sign off on</h2>
+    <p>Open source core under Apache-2.0. Set up in minutes.</p>
+    <div class="row">
+      {% if signup %}<a class="button lg" href="/signup">Create your workspace {{ icon("arrow") }}</a>{% endif %}
+      <a class="button lg secondary" href="https://alexm2025.github.io/agentguard/">Read the docs</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

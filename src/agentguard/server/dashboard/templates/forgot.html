@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_icons.html" import mark %}
+{% block title %}Reset password{% endblock %}
+{% block bare %}
+<main class="auth">
+  <section class="auth-card">
+    <div class="head">{{ mark("lg") }}<h1>Reset your password</h1>
+      <p class="lead">{% if email_enabled %}We'll email you a link to choose a new one.{% else %}Password reset by email is not enabled on this server.{% endif %}</p></div>
+    {% if not email_enabled %}
+      <div class="notice info">Ask an administrator of your organization to reset your access.</div>
+    {% elif sent %}
+      <div class="notice ok" role="status">If an account exists for that address, a reset link is on its way. It expires in one hour.</div>
+    {% else %}
+    <form method="post" action="/forgot">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Email <input type="email" name="email" autocomplete="email" required autofocus></label>
+      <button type="submit" class="block lg">Send reset link</button>
+    </form>
+    {% endif %}
+    <p class="auth-alt"><a href="/login">Back to sign in</a></p>
+  </section>
+</main>
+{% endblock %}

@@ -93,16 +93,29 @@ def static_app() -> StaticFiles:
     return StaticFiles(directory=str(HERE / "static"))
 
 
-class LoginRequired(Exception):
-    pass
-
-
 async def ui_principal(request: Request, db: AsyncSession = Depends(get_db)) -> Principal:
     if request.cookies.get(SESSION_COOKIE) is None:
         raise HTTPException(status_code=303, headers={"location": "/login"})
     p = await resolve_principal(request, db)
     if p is None or p.kind != "user":
         raise HTTPException(status_code=303, headers={"location": "/login"})
+    # Shell context: organization name and the pending-approvals badge.
+    from sqlalchemy import func
+
+    from agentguard.server.models import Organization
+
+    org = await db.get(Organization, p.org_id)
+    request.state.org_name = org.name if org else ""
+    request.state.pending_count = int(
+        (
+            await db.execute(
+                select(func.count())
+                .select_from(Approval)
+                .where(Approval.org_id == p.org_id, Approval.status == "pending")
+            )
+        ).scalar()
+        or 0
+    )
     return p
 
 
@@ -112,8 +125,12 @@ def need(p: Principal, permission: str) -> None:
 
 
 def render(request: Request, name: str, p: Principal | None, **ctx: Any) -> HTMLResponse:
-    features = request.app.state.features
-    return templates.TemplateResponse(request, name, {"p": p, "features": features, **ctx})
+    shell = {
+        "features": request.app.state.features,
+        "org_name": getattr(request.state, "org_name", ""),
+        "pending_count": getattr(request.state, "pending_count", 0),
+    }
+    return templates.TemplateResponse(request, name, {"p": p, **shell, **ctx})
 
 
 # ---------------------------------------------------------------- login
@@ -122,7 +139,15 @@ def render(request: Request, name: str, p: Principal | None, **ctx: Any) -> HTML
 @router.get("/login")
 async def login_form(request: Request) -> Response:
     token = secrets.token_urlsafe(24)
-    resp = render(request, "login.html", None, csrf=token, error=None, sso=request.app.state.features.get("oidc"))
+    resp = render(
+        request,
+        "login.html",
+        None,
+        csrf=token,
+        error=None,
+        sso=request.app.state.features.get("oidc"),
+        signup=request.app.state.settings.allow_signup,
+    )
     resp.set_cookie(
         LOGIN_CSRF,
         token,
@@ -157,7 +182,18 @@ async def login_submit(
             sso=None,
         )
     user = (await db.execute(select(User).where(User.email == email.lower()))).scalar_one_or_none()
-    if not verify_password(password, user.password_hash if user else None) or user is None or not user.is_active:
+    password_ok = verify_password(password, user.password_hash if user else None)
+    if password_ok and user is not None and not user.is_active and user.email_verified_at is None:
+        return render(
+            request,
+            "login.html",
+            None,
+            csrf=csrf_token,
+            sso=request.app.state.features.get("oidc"),
+            signup=settings.allow_signup,
+            error="Confirm your email first: open the link we sent you.",
+        )
+    if not password_ok or user is None or not user.is_active:
         return render(
             request,
             "login.html",
@@ -165,6 +201,7 @@ async def login_submit(
             csrf=csrf_token,
             error="Invalid email or password.",
             sso=request.app.state.features.get("oidc"),
+            signup=settings.allow_signup,
         )
     mem = (
         (await db.execute(select(Membership).where(Membership.user_id == user.id).order_by(Membership.created_at)))
@@ -194,12 +231,47 @@ async def logout(
     return resp
 
 
-@router.get("/")
-async def index() -> Response:
-    return RedirectResponse("/events", status_code=303)
-
-
 # ---------------------------------------------------------------- events
+
+
+async def _activity(db: AsyncSession, org_id: str) -> dict[str, Any]:
+    """Hourly tool-call counts for the last 24 hours, shaped for the SVG bar chart."""
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    start = now - timedelta(hours=24)
+    rows = (
+        await db.execute(
+            select(Event.timestamp, Event.action).where(
+                Event.org_id == org_id, Event.type == "tool_call", Event.timestamp >= start
+            )
+        )
+    ).all()
+    buckets = [{"allow": 0, "block": 0, "approval": 0} for _ in range(24)]
+    for raw_ts, action in rows:
+        ts = raw_ts if raw_ts.tzinfo else raw_ts.replace(tzinfo=UTC)
+        i = min(23, max(0, int((ts - start).total_seconds() // 3600)))
+        key = "block" if action == "BLOCK" else "approval" if action == "REQUIRE_APPROVAL" else "allow"
+        buckets[i][key] += 1
+    peak = max([b["allow"] + b["block"] + b["approval"] for b in buckets] + [1])
+    width, height, gap = 960, 130, 6
+    bw = width / 24 - gap
+    bars = []
+    for i, b in enumerate(buckets):
+        x = i * (width / 24) + gap / 2
+        y = float(height)
+        for key in ("allow", "approval", "block"):
+            h = b[key] / peak * (height - 8)
+            if h:
+                y -= h
+                bars.append(
+                    {"x": round(x, 1), "y": round(y, 1), "w": round(bw, 1), "h": round(max(h, 2), 1), "cls": key}
+                )
+    labels = [
+        {"x": round(i * (width / 24) + (width / 48), 1), "text": (start + timedelta(hours=i)).strftime("%H:00")}
+        for i in range(0, 24, 4)
+    ]
+    return {"bars": bars, "labels": labels, "peak": peak, "total": len(rows), "width": width, "height": height}
 
 
 async def _events(db: AsyncSession, org_id: str, action: str | None, limit: int = 100) -> list[Event]:
@@ -237,6 +309,7 @@ async def events_page(
         action=action or "",
         m=await services.metrics_summary(db, p.org_id, 24),
         pending=pending,
+        activity=await _activity(db, p.org_id),
     )
 
 
