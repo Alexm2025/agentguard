@@ -1,0 +1,78 @@
+# Tool classification for the AgentDojo suites: what a deployer would configure for these tools.
+# Written from the tools' names and argument lists only; not tuned against benchmark results.
+#   role: source (reads data) | sink (acts)      risk: low | medium | high | critical
+#   destination_args: arguments that choose who/where data or money goes
+tools:
+  # ---------------------------------------------------------------- workspace
+  get_unread_emails: { role: source, risk: low }
+  get_sent_emails: { role: source, risk: low }
+  get_received_emails: { role: source, risk: low }
+  get_draft_emails: { role: source, risk: low }
+  search_emails: { role: source, risk: low, ref_arg: query }
+  search_contacts_by_name: { role: source, risk: low }
+  search_contacts_by_email: { role: source, risk: low }
+  get_current_day: { role: source, risk: low, trusted_output: true }
+  search_calendar_events: { role: source, risk: low }
+  get_day_calendar_events: { role: source, risk: low }
+  search_files_by_filename: { role: source, risk: low }
+  get_file_by_id: { role: source, risk: low, ref_arg: file_id }
+  list_files: { role: source, risk: low }
+  search_files: { role: source, risk: low }
+  send_email: { role: sink, risk: high, destination_args: [recipients, cc, bcc] }
+  delete_email: { role: sink, risk: critical, destination_args: [email_id] }
+  create_calendar_event: { role: sink, risk: medium, destination_args: [participants] }
+  cancel_calendar_event: { role: sink, risk: medium, destination_args: [event_id] }
+  reschedule_calendar_event: { role: sink, risk: medium, destination_args: [event_id] }
+  add_calendar_event_participants: { role: sink, risk: medium, destination_args: [participants] }
+  append_to_file: { role: sink, risk: medium, destination_args: [file_id] }
+  create_file: { role: sink, risk: medium }
+  delete_file: { role: sink, risk: critical, destination_args: [file_id] }
+  share_file: { role: sink, risk: high, destination_args: [email] }
+  # ---------------------------------------------------------------- travel
+  get_user_information: { role: source, risk: low }
+  get_all_hotels_in_city: { role: source, risk: low }
+  get_hotels_prices: { role: source, risk: low }
+  get_rating_reviews_for_hotels: { role: source, risk: low }
+  get_hotels_address: { role: source, risk: low }
+  get_all_restaurants_in_city: { role: source, risk: low }
+  get_cuisine_type_for_restaurants: { role: source, risk: low }
+  get_restaurants_address: { role: source, risk: low }
+  get_rating_reviews_for_restaurants: { role: source, risk: low }
+  get_dietary_restrictions_for_all_restaurants: { role: source, risk: low }
+  get_contact_information_for_restaurants: { role: source, risk: low }
+  get_price_for_restaurants: { role: source, risk: low }
+  check_restaurant_opening_hours: { role: source, risk: low }
+  get_all_car_rental_companies_in_city: { role: source, risk: low }
+  get_car_types_available: { role: source, risk: low }
+  get_rating_reviews_for_car_rental: { role: source, risk: low }
+  get_car_fuel_options: { role: source, risk: low }
+  get_car_rental_address: { role: source, risk: low }
+  get_car_price_per_day: { role: source, risk: low }
+  get_flight_information: { role: source, risk: low }
+  reserve_hotel: { role: sink, risk: high, destination_args: [hotel] }
+  reserve_car_rental: { role: sink, risk: high, destination_args: [company] }
+  reserve_restaurant: { role: sink, risk: high, destination_args: [restaurant] }
+  # ---------------------------------------------------------------- banking
+  get_iban: { role: source, risk: low, trusted_output: true }
+  get_balance: { role: source, risk: low, trusted_output: true }
+  get_most_recent_transactions: { role: source, risk: low }
+  get_scheduled_transactions: { role: source, risk: low }
+  read_file: { role: source, risk: low, ref_arg: file_path }
+  get_user_info: { role: source, risk: low }
+  send_money: { role: sink, risk: critical, destination_args: [recipient] }
+  schedule_transaction: { role: sink, risk: critical, destination_args: [recipient] }
+  update_scheduled_transaction: { role: sink, risk: critical, destination_args: [recipient] }
+  update_password: { role: sink, risk: critical }
+  update_user_info: { role: sink, risk: high }
+  # ---------------------------------------------------------------- slack
+  get_channels: { role: source, risk: low }
+  read_channel_messages: { role: source, risk: low, ref_arg: channel }
+  read_inbox: { role: source, risk: low, ref_arg: user }
+  get_users_in_channel: { role: source, risk: low }
+  get_webpage: { role: source, risk: low, ref_arg: url }
+  send_direct_message: { role: sink, risk: high, destination_args: [recipient] }
+  send_channel_message: { role: sink, risk: medium, destination_args: [channel] }
+  post_webpage: { role: sink, risk: high, destination_args: [url] }
+  invite_user_to_slack: { role: sink, risk: high, destination_args: [user, user_email] }
+  add_user_to_channel: { role: sink, risk: medium, destination_args: [user, channel] }
+  remove_user_from_slack: { role: sink, risk: critical, destination_args: [user] }

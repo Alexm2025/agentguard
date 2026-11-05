@@ -54,6 +54,7 @@ anthropic = ["anthropic>=0.34"]
 langchain = ["langchain-core>=0.3"]
 llamaindex = ["llama-index-core>=0.11"]
 openai-agents = ["openai-agents>=0.2"]
+benchmark = ["agentdojo>=0.1.35"]
 train = ["torch>=2.3", "transformers>=4.44", "datasets>=2.20", "scikit-learn>=1.5", "onnx>=1.16", "onnxruntime>=1.18", "accelerate>=0.33"]
 all = ["agentguard[ml,server,gateway,telemetry,openai,anthropic]"]
 
@@ -94,7 +95,7 @@ ignore = ["PLR0913", "PLR0917", "PLR2004", "PLR0911", "PLR0912", "PLR0915", "S10
 "src/agentguard/server/**" = ["B008"]
 "src/agentguard/gateway/**" = ["B008"]
 "ee/**" = ["B008"]
-"benchmark/**" = ["S311", "RUF001"]
+"benchmark/**" = ["S311", "RUF001", "E501"]
 "deploy/**" = ["S311"]
 # One-shot build scripts: throwaway demo credentials, blocking file I/O is fine.
 "scripts/**" = ["S105", "S106", "ASYNC240", "E501"]
