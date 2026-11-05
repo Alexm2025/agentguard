@@ -4,6 +4,10 @@
 tool use by tracking where every piece of context came from, enforcing declarative policies on
 every tool call, and layering injection detectors.
 
+[**See the dashboard preview →**](demo/){ .md-button .md-button--primary } (a static snapshot with demo data)
+
+![AgentGuard dashboard](assets/dashboard-events.png)
+
 ## The problem
 
 An agent reads a web page, an email or a document. Hidden in that content is an instruction:

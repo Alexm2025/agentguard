@@ -2,7 +2,9 @@
 
 Runtime security for LLM agents: stops indirect prompt injection and unauthorized tool use.
 
-[![CI](https://github.com/Alexm2025/agentguard/actions/workflows/ci.yml/badge.svg)](https://github.com/Alexm2025/agentguard/actions/workflows/ci.yml) · [Documentation](https://alexm2025.github.io/agentguard/)
+[![CI](https://github.com/Alexm2025/agentguard/actions/workflows/ci.yml/badge.svg)](https://github.com/Alexm2025/agentguard/actions/workflows/ci.yml) · [Documentation](https://alexm2025.github.io/agentguard/) · **[Dashboard preview](https://alexm2025.github.io/agentguard/demo/)**
+
+![AgentGuard dashboard: live events](docs/assets/dashboard-events.png)
 
 AgentGuard tracks where every piece of context came from (provenance/taint), enforces declarative
 policies on every tool call, and layers injection detectors. When a web page, email or document
@@ -67,6 +69,8 @@ export AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 export AGENTGUARD_BOOTSTRAP_ADMIN_PASSWORD='choose-a-long-password'
 agentguard server run --migrate      # http://127.0.0.1:8000
 ```
+
+![Attack path for a blocked call](docs/assets/dashboard-attack-path.png)
 
 Live event feed, blocked-action detail with the full taint chain, approval queue, policy editor
 with validation, metrics, API keys, and a hash-chained tamper-evident audit log. SQLite by

@@ -3,7 +3,7 @@ name: Docs
 on:
   push:
     branches: [main]
-    paths: ["docs/**", "mkdocs.yml", "SECURITY.md", "src/agentguard/core/policy/**", ".github/workflows/docs.yml"]
+    paths: ["docs/**", "mkdocs.yml", "SECURITY.md", "src/agentguard/**", "scripts/static_demo.py", ".github/workflows/docs.yml"]
   workflow_dispatch:
 
 permissions:
@@ -20,9 +20,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
-      - run: pip install -e . mkdocs-material
+      - run: pip install -e ".[server]" mkdocs-material
       - run: mkdocs build --strict
         env: { NO_MKDOCS_2_WARNING: "1" }
+      - name: static dashboard preview (demo data)
+        run: python scripts/static_demo.py site/demo
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
   deploy:
