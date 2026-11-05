@@ -407,3 +407,8 @@ textarea.code:focus { box-shadow: none; }
 .nav .count { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 99px;
   font-size: 11px; font-weight: 700; background: var(--amber-soft); color: var(--amber); box-shadow: inset 0 0 0 1px rgba(245, 184, 75, .25); font-variant-numeric: tabular-nums; }
 @media (max-width: 880px) { .shell { background: var(--bg); } }
+@media (max-width: 640px) {
+  .topnav nav a.link { display: none; }
+  .badge { height: auto; padding: 6px 12px; line-height: 1.4; }
+  .topnav .button { height: 34px; padding: 0 12px; }
+}
