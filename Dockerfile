@@ -32,6 +32,6 @@ COPY --from=build /opt/venv /opt/venv
 USER 10001:10001
 WORKDIR /data
 EXPOSE 8000 8100 8200
-HEALTHCHECK --interval=30s --timeout=3s --start-period=20s CMD ["python", "-c", "import os,urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"AGENTGUARD_PORT\",\"8000\")}/healthz', timeout=2)"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s CMD ["python", "-c", "import os,urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"AGENTGUARD_PORT\",os.environ.get(\"PORT\",\"8000\"))}/healthz', timeout=2)"]
 ENTRYPOINT ["agentguard"]
 CMD ["server", "run", "--migrate"]

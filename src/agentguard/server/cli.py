@@ -116,7 +116,9 @@ def register(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     srv = sub.add_parser("server", help="control plane").add_subparsers(dest="server_cmd", required=True)
     r = srv.add_parser("run", help="run the control plane (API + dashboard)")
     r.add_argument("--host", default=os.environ.get("AGENTGUARD_HOST", "127.0.0.1"))
-    r.add_argument("--port", type=int, default=int(os.environ.get("AGENTGUARD_PORT", "8000")))
+    r.add_argument(
+        "--port", type=int, default=int(os.environ.get("AGENTGUARD_PORT") or os.environ.get("PORT") or "8000")
+    )
     r.add_argument("--migrate", action="store_true", help="apply database migrations before starting")
     r.add_argument("--ssl-certfile", default=os.environ.get("AGENTGUARD_TLS_CERT"))
     r.add_argument("--ssl-keyfile", default=os.environ.get("AGENTGUARD_TLS_KEY"))

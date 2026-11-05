@@ -1,27 +1,44 @@
-# Render blueprint for a public demo of the AgentGuard control plane.
-# New > Blueprint > pick this repo. Render asks for the admin password; everything else is generated.
-# Free instances have no persistent disk: the SQLite demo database (and the demo data) is recreated
-# on each restart. Use Postgres (AGENTGUARD_DATABASE_URL) for anything beyond a demo.
+# Render blueprint: a public, multi-tenant AgentGuard service with managed Postgres.
+#
+#   One click: https://render.com/deploy?repo=https://github.com/Alexm2025/agentguard
+#
+# Render asks for the values marked `sync: false`. Everything else is generated or wired up.
+# Plans: `free` is fine to try it out (the web service sleeps when idle and free Postgres
+# databases expire after 30 days). For a product people depend on, switch both to paid plans.
 services:
   - type: web
-    name: agentguard-demo
+    name: agentguard
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /healthz
-    dockerCommand: >-
-      sh -c "agentguard server migrate && agentguard server run --host 0.0.0.0 --port $PORT
-      & sleep 8 && agentguard server seed-demo; wait"
+    healthCheckPath: /readyz
+    dockerCommand: sh -c "agentguard server migrate && agentguard server run --host 0.0.0.0 --port $PORT"
     envVars:
       - key: AGENTGUARD_ENV
         value: production
-      - key: AGENTGUARD_DATABASE_URL
-        value: sqlite+aiosqlite:////tmp/agentguard.db
+      - key: DATABASE_URL
+        fromDatabase: { name: agentguard-db, property: connectionString }
       - key: AGENTGUARD_SECRET_KEY
         generateValue: true
-      - key: AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL
-        value: demo@agentguard.dev
-      - key: AGENTGUARD_BOOTSTRAP_ADMIN_PASSWORD
-        sync: false
+      - key: AGENTGUARD_SERVICE_TOKEN
+        generateValue: true
+      - key: AGENTGUARD_ALLOW_SIGNUP
+        value: "true"
       - key: AGENTGUARD_TRUST_PROXY_HEADERS
         value: "true"
+      # Optional but recommended for a public service: email verification and password reset.
+      - key: AGENTGUARD_SMTP_URL
+        sync: false
+      - key: AGENTGUARD_MAIL_FROM
+        sync: false
+      # Optional: your own first admin account (otherwise just sign up on the site).
+      - key: AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: AGENTGUARD_BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: agentguard-db
+    plan: free
+    databaseName: agentguard
+    user: agentguard
