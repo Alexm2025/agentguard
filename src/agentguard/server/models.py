@@ -62,6 +62,7 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String(300), nullable=True)
     oidc_subject: Mapped[str | None] = mapped_column(String(300), nullable=True, unique=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

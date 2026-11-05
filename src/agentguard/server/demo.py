@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from agentguard.core.engine import Engine, GuardContext
 from agentguard.core.events import MemorySink, decision_event
@@ -63,6 +64,21 @@ def _sessions(engine: Engine) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     return sink.events, decision_event(d, context=c.meta())
 
 
+async def seed_org(s: AsyncSession, org: Organization, settings: ServerSettings) -> int:
+    """Load the demo sessions into ``org`` if it has no events yet. Returns the number of events."""
+    if (await s.execute(select(func.count()).select_from(Event).where(Event.org_id == org.id))).scalar():
+        return 0
+    if not (await s.execute(select(Policy).where(Policy.org_id == org.id, Policy.name == "demo"))).scalar():
+        pol = Policy(org_id=org.id, name="demo")
+        s.add(pol)
+        await s.flush()
+        await services.create_policy_version(s, pol, DEMO_POLICY, "system:demo", "demo tool classification")
+    events, approval_event = _sessions(Engine(parse_policy(DEMO_POLICY)))
+    n = await services.ingest_events(s, org.id, None, events)
+    await services.create_approval(s, org, None, approval_event, 7 * 24 * 3600, settings, [])
+    return n
+
+
 async def seed(settings: ServerSettings, org_slug: str = "default") -> int:
     db = Database(settings.database_url)
     try:
@@ -70,16 +86,6 @@ async def seed(settings: ServerSettings, org_slug: str = "default") -> int:
             org = (await s.execute(select(Organization).where(Organization.slug == org_slug))).scalar_one_or_none()
             if org is None:
                 return 0
-            if (await s.execute(select(func.count()).select_from(Event).where(Event.org_id == org.id))).scalar():
-                return 0
-            if not (await s.execute(select(Policy).where(Policy.org_id == org.id, Policy.name == "demo"))).scalar():
-                pol = Policy(org_id=org.id, name="demo")
-                s.add(pol)
-                await s.flush()
-                await services.create_policy_version(s, pol, DEMO_POLICY, "system:demo", "demo tool classification")
-            events, approval_event = _sessions(Engine(parse_policy(DEMO_POLICY)))
-            n = await services.ingest_events(s, org.id, None, events)
-            await services.create_approval(s, org, None, approval_event, 7 * 24 * 3600, settings, [])
-            return n
+            return await seed_org(s, org, settings)
     finally:
         await db.dispose()

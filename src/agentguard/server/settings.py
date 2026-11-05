@@ -12,6 +12,9 @@
 | ``AGENTGUARD_SESSION_TTL_HOURS`` | ``12`` | |
 | ``AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL`` / ``_PASSWORD`` | unset | creates the first org + admin on startup if no users exist |
 | ``AGENTGUARD_EVENT_RETENTION_DAYS`` | ``90`` | events older than this are deleted by ``agentguard server prune`` |
+| ``AGENTGUARD_ALLOW_SIGNUP`` | ``false`` | public self-service sign-up (each sign-up gets its own organization) |
+| ``AGENTGUARD_SMTP_URL`` | unset | ``smtp://user:pass@host:587`` or ``smtps://...:465``; enables email verification and password reset |
+| ``AGENTGUARD_MAIL_FROM`` | ``AgentGuard <no-reply@localhost>`` | sender for account emails |
 """
 
 from __future__ import annotations
@@ -50,6 +53,13 @@ class ServerSettings(BaseModel):
     api_rate_limit: int = 600  # requests per minute per principal
     max_events_per_batch: int = 500
     trust_proxy_headers: bool = False
+    allow_signup: bool = False
+    smtp_url: str | None = None  # smtp://user:pass@host:587 (STARTTLS) or smtps://user:pass@host:465
+    mail_from: str = "AgentGuard <no-reply@localhost>"
+
+    @property
+    def email_enabled(self) -> bool:
+        return bool(self.smtp_url)
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
@@ -71,6 +81,14 @@ def _split_origins(value: str) -> list[str]:
     return [o.strip() for o in value.split(",") if o.strip()]
 
 
+def normalize_database_url(url: str) -> str:
+    """Accept provider-style URLs (``postgres://``, ``postgresql://``) and select the async driver."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix) :]
+    return url
+
+
 @lru_cache(maxsize=1)
 def get_settings() -> ServerSettings:
     env = _env("AGENTGUARD_ENV", "development") or "development"
@@ -82,15 +100,20 @@ def get_settings() -> ServerSettings:
         log.warning("AGENTGUARD_SECRET_KEY not set; using an ephemeral key (sessions reset on restart)")
     return ServerSettings(
         env=env,
-        database_url=_env("AGENTGUARD_DATABASE_URL", "sqlite+aiosqlite:///./agentguard.db") or "",
+        database_url=normalize_database_url(
+            _env("AGENTGUARD_DATABASE_URL") or _env("DATABASE_URL") or "sqlite+aiosqlite:///./agentguard.db"
+        ),
         redis_url=_env("AGENTGUARD_REDIS_URL"),
         secret_key=secret,
         service_token=_env("AGENTGUARD_SERVICE_TOKEN"),
         allowed_origins=_split_origins(_env("AGENTGUARD_ALLOWED_ORIGINS", "") or ""),
-        public_url=_env("AGENTGUARD_PUBLIC_URL", "http://localhost:8000") or "",
+        public_url=_env("AGENTGUARD_PUBLIC_URL") or _env("RENDER_EXTERNAL_URL") or "http://localhost:8000",
         session_ttl_hours=float(_env("AGENTGUARD_SESSION_TTL_HOURS", "12") or 12),
         bootstrap_admin_email=_env("AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL"),
         bootstrap_admin_password=_env("AGENTGUARD_BOOTSTRAP_ADMIN_PASSWORD"),
         event_retention_days=int(_env("AGENTGUARD_EVENT_RETENTION_DAYS", "90") or 90),
         trust_proxy_headers=(_env("AGENTGUARD_TRUST_PROXY_HEADERS", "false") or "").lower() == "true",
+        allow_signup=(_env("AGENTGUARD_ALLOW_SIGNUP", "false") or "").lower() == "true",
+        smtp_url=_env("AGENTGUARD_SMTP_URL"),
+        mail_from=_env("AGENTGUARD_MAIL_FROM", "AgentGuard <no-reply@localhost>") or "",
     )
