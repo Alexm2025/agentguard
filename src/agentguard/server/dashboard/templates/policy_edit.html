@@ -6,28 +6,30 @@
 <div class="page-head">
   <div>
     <h1>{{ policy.name if policy else "New policy" }}</h1>
-    <p>{% if policy %}Active revision <b>r{{ policy.active_revision }}</b> · saving creates a new revision and activates it.{% else %}Starts from the built-in default policy.{% endif %}</p>
+    <p>{% if policy %}Active revision <b>r{{ policy.active_revision }}</b>. Saving creates a new revision and activates it.{% else %}Starts from the built-in default policy. <a href="https://alexm2025.github.io/agentguard/reference/policy/">Policy guide →</a>{% endif %}</p>
   </div>
 </div>
 {% if saved %}<div class="notice ok" role="status">Saved and activated revision {{ saved }}.</div><br>{% endif %}
 <form method="post" action="{{ '/policies/' ~ policy.id if policy else '/policies/new' }}">
   <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
   <div class="grid side">
-    <div>
-      {% if not policy %}<label>Policy name <input type="text" name="name" pattern="[A-Za-z0-9_.\-]{1,100}" required placeholder="e.g. production"></label>{% endif %}
-      <div class="editor-bar"><span class="dots"><i></i><i></i><i></i></span><span>{{ (policy.name if policy else "policy") ~ ".yaml" }}</span></div>
-      <textarea class="code" name="yaml_text" spellcheck="false" aria-label="Policy YAML" hx-post="/policies-validate" hx-trigger="keyup changed delay:600ms" hx-target="#validation" {% if not p.can("policies:write") %}readonly{% endif %}>{{ text }}</textarea>
+    <div class="stack">
+      {% if not policy %}<label>Policy name <input type="text" name="name" pattern="[A-Za-z0-9_.\-]{1,100}" required placeholder="production"></label>{% endif %}
+      <div class="editor">
+        <div class="editor-bar"><span class="dots"><i></i><i></i><i></i></span><span>{{ (policy.name if policy else "policy") ~ ".yaml" }}</span></div>
+        <textarea class="code" name="yaml_text" spellcheck="false" aria-label="Policy YAML" hx-post="/policies-validate" hx-trigger="keyup changed delay:600ms" hx-target="#validation" {% if not p.can("policies:write") %}readonly{% endif %}>{{ text }}</textarea>
+      </div>
     </div>
-    <div>
+    <div class="stack">
       <section class="card">
-        <div class="card-head"><h2>Validation</h2><span class="muted small">live</span></div>
+        <div class="card-head"><h2>Validation</h2><span class="live">Live</span></div>
         <div class="card-body" id="validation">{% include "_validation.html" %}</div>
       </section>
       {% if p.can("policies:write") %}
       <section class="card">
         <div class="card-body">
           <label>Change note <input type="text" name="comment" maxlength="500" placeholder="What changed and why"></label>
-          <button type="submit">Save new revision</button>
+          <button type="submit" class="block">Save new revision</button>
         </div>
       </section>
       {% endif %}
@@ -38,7 +40,7 @@
           <ul class="versions">
             {% for v in versions %}
             <li><div class="row"><b>r{{ v.revision }}</b>{% if policy and v.revision == policy.active_revision %}<span class="pill active">active</span>{% endif %}<span class="chip">{{ v.digest[:10] }}</span></div>
-            <span class="small">{{ v.comment or "no note" }}</span><span class="muted small">{{ v.created_by }} · {{ v.created_at|ago }}</span></li>
+            <span class="small">{{ v.comment or "No note" }}</span><span class="muted small">{{ v.created_by }} · {{ v.created_at|ago }}</span></li>
             {% endfor %}
           </ul>
         </div>

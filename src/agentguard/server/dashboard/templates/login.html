@@ -1,25 +1,24 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon, mark %}
 {% block title %}Sign in{% endblock %}
+{% block topnav_actions %}{% if signup %}<a class="button secondary" href="/signup">Create account</a>{% endif %}{% endblock %}
 {% block bare %}
-<div class="auth">
-  <div>
-    <section class="auth-card">
-      <div class="brand">{{ mark() }}<span>AgentGuard</span></div>
-      <h1>Welcome back</h1>
-      <p class="lead">Sign in to monitor and control your agents.</p>
-      {% if error %}<div class="notice error" role="alert">{{ error }}</div><br>{% endif %}
-      <form method="post" action="/login">
-        <input type="hidden" name="csrf_token" value="{{ csrf }}">
-        <label>Email <input type="email" name="email" autocomplete="username" required autofocus></label>
-        <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
-        <button type="submit">Sign in</button>
-      </form>
-      {% if sso %}
-      <div class="divider">or</div>
-      <a class="button secondary" href="/auth/oidc/login">{{ icon("lock") }}Sign in with SSO</a>
-      {% endif %}
-    </section>
-    <p class="auth-foot">AgentGuard {{ features.edition }} edition</p>
-  </div>
-</div>
+<main class="auth">
+  <section class="auth-card">
+    <div class="head">{{ mark("lg") }}<h1>Welcome back</h1><p class="lead">Sign in to your AgentGuard workspace.</p></div>
+    {% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/login">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Email <input type="email" name="email" autocomplete="username" required autofocus placeholder="you@company.com"></label>
+      <label><span class="label-row"><span>Password</span><a href="/forgot">Forgot password?</a></span>
+        <input type="password" name="password" autocomplete="current-password" required></label>
+      <button type="submit" class="block lg">Sign in</button>
+    </form>
+    {% if sso %}
+    <div class="divider">or</div>
+    <a class="button secondary block lg" href="/auth/oidc/login">{{ icon("lock") }}Continue with SSO</a>
+    {% endif %}
+    {% if signup %}<p class="auth-alt">New to AgentGuard? <a href="/signup">Create an account</a></p>{% endif %}
+  </section>
+</main>
 {% endblock %}

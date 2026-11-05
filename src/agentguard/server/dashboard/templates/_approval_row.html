@@ -4,14 +4,14 @@
     <span class="pill {{ a.status }}">{{ a.status }}</span>
   </div>
   <div class="card-body">
-    <div class="kv"><span>Requested <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span>{% if a.resolved_by %}<span>Resolved by <b>{{ a.resolved_by }}</b></span>{% endif %}</div>
+    <div class="kv"><span>Requested <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span>{% if a.resolved_by %}<span>Decided by <b>{{ a.resolved_by }}</b></span>{% endif %}</div>
     {% if a.reasons %}<ul class="reasons">{% for r in a.reasons[:3] %}<li><span class="msg">{{ r.message }}</span></li>{% endfor %}</ul>{% endif %}
     {% if a.taint_chain %}<div class="notice warn small"><code>{{ a.taint_chain[0] }}</code></div>{% endif %}
     <pre>{{ a.arguments|tojson_pretty }}</pre>
     {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
   </div>
   <div class="actions">
-    <a class="button secondary" href="/approvals/{{ a.id }}">Details</a>
+    <a class="button ghost" href="/approvals/{{ a.id }}">Details</a>
     {% if a.status == "pending" and p.can("approvals:resolve") %}
     <form class="inline" hx-post="/approvals/{{ a.id }}/resolve" hx-target="#apr-{{ a.id }}" hx-swap="outerHTML" method="post" action="/approvals/{{ a.id }}/resolve">
       <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">

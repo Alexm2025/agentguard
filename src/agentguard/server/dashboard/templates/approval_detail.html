@@ -8,28 +8,26 @@
   <a class="button secondary" href="/events/{{ a.event_id }}">View triggering event</a>
 </div>
 <div class="grid side">
-  <div>
+  <div class="stack">
     {% if a.taint_chain %}<section class="card"><div class="card-head"><h2>Taint chain</h2></div><div class="card-body">{% for c in a.taint_chain %}<div><code>{{ c }}</code></div>{% endfor %}</div></section>{% endif %}
     <section class="card"><div class="card-head"><h2>Why approval is needed</h2></div><div class="card-body"><ul class="reasons">{% for r in a.reasons or [] %}<li><span class="msg">{{ r.message }}</span></li>{% endfor %}</ul></div></section>
     <section class="card"><div class="card-head"><h2>Arguments</h2></div><div class="card-body"><pre>{{ a.arguments|tojson_pretty }}</pre></div></section>
   </div>
-  <div>
-    <section class="card">
-      <div class="card-head"><h2>Decision</h2></div>
-      <div class="card-body">
-        {% if a.status == "pending" and p.can("approvals:resolve") %}
-        <form method="post" action="/approvals/{{ a.id }}/resolve">
-          <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-          <label>Note (optional) <input type="text" name="note" maxlength="1000" placeholder="e.g. verified with the requester"></label>
-          <div class="row"><button name="decision" value="approve" type="submit" class="approve">Approve</button><button name="decision" value="deny" type="submit" class="danger">Deny</button></div>
-        </form>
-        {% elif a.resolved_by %}
-        <p>Resolved by <b>{{ a.resolved_by }}</b> via <span class="chip">{{ a.channel }}</span> {{ a.resolved_at|ago }}.</p>
-        {% if a.resolution_note %}<p class="muted">“{{ a.resolution_note }}”</p>{% endif %}
-        {% else %}<p class="muted">This request {{ a.status }} without a decision.</p>{% endif %}
-        <div class="kv small"><span>Requested <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span></div>
-      </div>
-    </section>
-  </div>
+  <section class="card">
+    <div class="card-head"><h2>Decision</h2></div>
+    <div class="card-body">
+      {% if a.status == "pending" and p.can("approvals:resolve") %}
+      <form method="post" action="/approvals/{{ a.id }}/resolve">
+        <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+        <label>Note <input type="text" name="note" maxlength="1000" placeholder="e.g. verified with the requester"><span class="hint">Saved in the audit log.</span></label>
+        <div class="row"><button name="decision" value="approve" type="submit" class="approve">Approve</button><button name="decision" value="deny" type="submit" class="danger">Deny</button></div>
+      </form>
+      {% elif a.resolved_by %}
+      <p>Decided by <b>{{ a.resolved_by }}</b> via <span class="chip">{{ a.channel }}</span> {{ a.resolved_at|ago }}.</p>
+      {% if a.resolution_note %}<p class="muted">“{{ a.resolution_note }}”</p>{% endif %}
+      {% else %}<p class="muted">This request {{ a.status }} without a decision.</p>{% endif %}
+      <br><div class="kv small"><span>Requested <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span></div>
+    </div>
+  </section>
 </div>
 {% endblock %}

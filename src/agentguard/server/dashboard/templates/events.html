@@ -5,18 +5,37 @@
 <div class="page-head">
   <div>
     <h1>Events</h1>
-    <p>Every tool call and tool result your agents produced, with AgentGuard's decision.</p>
+    <p>Every tool call and tool result from your agents, with AgentGuard's decision and the reason behind it.</p>
   </div>
   <span class="live">Live</span>
 </div>
 
 <div class="stats">
-  <div class="stat red"><span class="label"><span class="ico">{{ icon("ban") }}</span>Blocked · 24h</span><span class="num">{{ m.attacks_blocked }}</span><span class="sub">of {{ m.tool_calls }} tool calls</span></div>
-  <div class="stat amber"><span class="label"><span class="ico">{{ icon("clock") }}</span>Awaiting approval</span><span class="num">{{ pending }}</span><span class="sub"><a href="/approvals">Open queue</a></span></div>
-  <div class="stat violet"><span class="label"><span class="ico">{{ icon("eye-off") }}</span>Results withheld · 24h</span><span class="num">{{ m.tool_results_flagged }}</span><span class="sub">injection or sensitive data</span></div>
-  <div class="stat blue"><span class="label"><span class="ico">{{ icon("zap") }}</span>p95 decision time</span><span class="num">{% if m.latency_ms.p95 is not none %}{{ "%.1f"|format(m.latency_ms.p95) }}<small class="muted"> ms</small>{% else %}–{% endif %}</span><span class="sub">engine overhead per call</span></div>
+  <div class="stat red"><span class="label"><span class="ico">{{ icon("ban") }}</span>Blocked · 24h</span>
+    <span class="value">{{ m.attacks_blocked }}</span><span class="sub">of {{ m.tool_calls }} tool calls</span></div>
+  <div class="stat amber"><span class="label"><span class="ico">{{ icon("clock") }}</span>Awaiting approval</span>
+    <span class="value">{{ pending }}</span><span class="sub">{% if pending %}<a href="/approvals">Review now →</a>{% else %}queue is clear{% endif %}</span></div>
+  <div class="stat violet"><span class="label"><span class="ico">{{ icon("eye-off") }}</span>Results withheld · 24h</span>
+    <span class="value">{{ m.tool_results_flagged }}</span><span class="sub">injection or sensitive data</span></div>
+  <div class="stat blue"><span class="label"><span class="ico">{{ icon("zap") }}</span>p95 decision time</span>
+    <span class="value">{% if m.latency_ms.p95 is not none %}{{ "%.1f"|format(m.latency_ms.p95) }}<small> ms</small>{% else %}–{% endif %}</span><span class="sub">engine overhead per call</span></div>
 </div>
 
+<section class="card">
+  <div class="card-head">
+    <div><h2>Activity</h2><span class="sub">Tool calls per hour, last 24 hours</span></div>
+    <div class="legend"><span><i class="allow"></i>Allowed</span><span><i class="approval"></i>Approval</span><span><i class="block"></i>Blocked</span></div>
+  </div>
+  <div class="card-body">
+    <svg class="chart" viewBox="0 0 {{ activity.width }} {{ activity.height + 22 }}" role="img" aria-label="{{ activity.total }} tool calls in the last 24 hours">
+      {% for f in [0.25, 0.5, 0.75] %}<line class="grid-line" x1="0" x2="{{ activity.width }}" y1="{{ (activity.height * f)|round(1) }}" y2="{{ (activity.height * f)|round(1) }}"/>{% endfor %}
+      <line class="grid-line" x1="0" x2="{{ activity.width }}" y1="{{ activity.height }}" y2="{{ activity.height }}"/>
+      {% for b in activity.bars %}<rect class="bar-{{ b.cls }}" x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" rx="3"><title>{{ b.cls }}</title></rect>{% endfor %}
+      {% for l in activity.labels %}<text x="{{ l.x }}" y="{{ activity.height + 16 }}" text-anchor="middle">{{ l.text }}</text>{% endfor %}
+    </svg>
+  </div>
+</section>
+<br>
 <section class="card">
   <div class="toolbar">
     <nav class="tabs" aria-label="Filter by decision">
@@ -24,7 +43,7 @@
       <a href="/events{% if value %}?action={{ value }}{% endif %}" {% if value == action %}aria-current="true"{% endif %}>{{ label }}</a>
       {% endfor %}
     </nav>
-    <span class="muted small">Refreshes every 3 seconds</span>
+    <span class="muted small">Updates every 3 seconds</span>
   </div>
   <div class="table-wrap">
     <table class="data">

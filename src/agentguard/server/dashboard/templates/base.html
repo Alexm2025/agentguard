@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "allowScriptTags": false}'>
   <title>{% block title %}AgentGuard{% endblock %} · AgentGuard</title>
+  <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>
@@ -13,34 +14,51 @@
 {% set path = request.url.path %}
 <div class="shell">
   <aside class="sidebar">
-    <a class="brand" href="/events">{{ mark() }}<span>AgentGuard<small>Agent runtime security</small></span></a>
+    <a class="brand" href="/events">{{ mark() }}<span>AgentGuard</span></a>
+    <div class="org"><span class="dot">{{ (org_name or "A")[:1] }}</span><div><div class="name">{{ org_name or "Organization" }}</div><div class="plan">{{ features.edition }}</div></div></div>
+    <nav class="nav" aria-label="Main">
+      <a href="/welcome" {% if path.startswith('/welcome') %}aria-current="page"{% endif %}>{{ icon("rocket") }}Get started</a>
+    </nav>
     <div class="nav-label">Monitor</div>
-    <nav class="nav">
+    <nav class="nav" aria-label="Monitor">
       <a href="/events" {% if path.startswith('/events') %}aria-current="page"{% endif %}>{{ icon("activity") }}Events</a>
-      <a href="/approvals" {% if path.startswith('/approvals') %}aria-current="page"{% endif %}>{{ icon("check-circle") }}Approvals</a>
+      <a href="/approvals" {% if path.startswith('/approvals') %}aria-current="page"{% endif %}>{{ icon("check-circle") }}Approvals{% if pending_count %}<span class="count">{{ pending_count }}</span>{% endif %}</a>
       <a href="/metrics" {% if path.startswith('/metrics') %}aria-current="page"{% endif %}>{{ icon("chart") }}Metrics</a>
     </nav>
     <div class="nav-label">Configure</div>
-    <nav class="nav">
+    <nav class="nav" aria-label="Configure">
       <a href="/policies" {% if path.startswith('/policies') %}aria-current="page"{% endif %}>{{ icon("file") }}Policies</a>
-      <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>{{ icon("settings") }}Settings</a>
+      <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>{{ icon("key") }}API keys &amp; team</a>
     </nav>
     <div class="side-foot">
-      <div class="who">
+      <a class="who" href="/account" {% if path.startswith('/account') %}aria-current="page"{% endif %}>
         <span class="avatar">{{ p.display[:1] }}</span>
         <div><div class="name">{{ p.display }}</div><div class="role">{{ p.role }}</div></div>
-      </div>
+      </a>
       <form method="post" action="/logout">
         <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-        <button type="submit">{{ icon("logout") }}Sign out</button>
+        <button type="submit" class="ghost">{{ icon("logout") }}Sign out</button>
       </form>
-      <div class="edition">AgentGuard {{ features.edition }} edition</div>
     </div>
   </aside>
-  <main class="main"><div class="page">{% block content %}{% endblock %}</div></main>
+  <main class="main" id="main"><div class="page">{% block content %}{% endblock %}</div></main>
 </div>
 {% else %}
-{% block bare %}{% endblock %}
+<div class="public">
+  <header class="topnav">
+    <a class="brand" href="/">{{ mark() }}<span>AgentGuard</span></a>
+    <nav>
+      <a class="link" href="https://alexm2025.github.io/agentguard/">Docs</a>
+      <a class="link" href="https://github.com/Alexm2025/agentguard">GitHub</a>
+      {% block topnav_actions %}
+      <a class="button secondary" href="/login">Sign in</a>
+      {% if signup %}<a class="button" href="/signup">Get started</a>{% endif %}
+      {% endblock %}
+    </nav>
+  </header>
+  {% block bare %}{% endblock %}
+  <footer class="foot"><span>AgentGuard {{ features.edition }} edition · runtime security for AI agents</span><span><a href="https://alexm2025.github.io/agentguard/limitations/">Limitations</a> · <a href="https://alexm2025.github.io/agentguard/security/disclosure/">Security</a></span></footer>
+</div>
 {% endif %}
 </body>
 </html>

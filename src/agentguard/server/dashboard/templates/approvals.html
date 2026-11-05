@@ -5,7 +5,7 @@
 <div class="page-head">
   <div>
     <h1>Approvals</h1>
-    <p>Risky actions paused until a person approves them. Agents wait for your decision.</p>
+    <p>Risky actions are paused until someone on your team decides. The agent waits for the answer.</p>
   </div>
   {% if pending %}<span class="pill pending lg">{{ pending|length }} waiting</span>{% endif %}
 </div>
@@ -13,19 +13,20 @@
 <div class="approvals" id="pending-list" hx-get="/approvals" hx-select="#pending-list > *" hx-trigger="every 5s" hx-swap="innerHTML">
   {% for a in pending %}{% include "_approval_row.html" %}
   {% else %}
-  <section class="card"><div class="empty">{{ icon("check-circle") }}<strong>All clear</strong>Nothing is waiting for review.</div></section>
+  <section class="card"><div class="empty"><div class="ring">{{ icon("check-circle") }}</div><strong>All clear</strong>Nothing is waiting for review.</div></section>
   {% endfor %}
 </div>
 
 {% if history %}
+<br>
 <section class="card">
   <div class="card-head"><h2>Recent decisions</h2></div>
   <div class="table-wrap">
     <table class="data compact">
-      <thead><tr><th>Requested</th><th>Tool</th><th>Outcome</th><th>By</th><th>Via</th></tr></thead>
+      <thead><tr><th>Requested</th><th>Tool</th><th>Outcome</th><th>Decided by</th><th>Via</th></tr></thead>
       <tbody>{% for a in history %}
-        <tr><td class="time"><a href="/approvals/{{ a.id }}">{{ a.created_at|ago }}</a></td><td class="tool">{{ a.tool }}</td>
-        <td><span class="pill {{ a.status }}">{{ a.status }}</span></td><td>{{ a.resolved_by or "—" }}</td><td><span class="chip">{{ a.channel or "—" }}</span></td></tr>
+        <tr><td class="time"><a class="rowlink" href="/approvals/{{ a.id }}">{{ a.created_at|ago }}</a></td><td class="tool">{{ a.tool }}</td>
+        <td><span class="pill {{ a.status }}">{{ a.status }}</span></td><td>{{ a.resolved_by or "—" }}</td><td>{% if a.channel %}<span class="chip">{{ a.channel }}</span>{% else %}—{% endif %}</td></tr>
       {% endfor %}</tbody>
     </table>
   </div>

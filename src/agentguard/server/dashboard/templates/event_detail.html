@@ -20,19 +20,20 @@
 
 <section class="card">
   <dl class="meta">
-    <div><dt>Time</dt><dd title="{{ ev.timestamp.isoformat() }}">{{ ev.timestamp.strftime("%b %d, %H:%M:%S") }} · {{ ev.timestamp|ago }}</dd></div>
+    <div><dt>When</dt><dd title="{{ ev.timestamp.isoformat() }}">{{ ev.timestamp.strftime("%b %d, %H:%M:%S") }} · {{ ev.timestamp|ago }}</dd></div>
     <div><dt>Source</dt><dd>{{ ev.source }}{% if d.server %} · {{ d.server }}{% endif %}</dd></div>
     <div><dt>Session</dt><dd class="mono">{{ ev.session_id or "—" }}</dd></div>
     <div><dt>Policy</dt><dd>{% if d.policy %}{{ d.policy.name }} · r{{ d.policy.revision }}{% else %}—{% endif %}</dd></div>
-    <div><dt>Latency</dt><dd>{% if ev.latency_ms is not none %}{{ "%.2f"|format(ev.latency_ms) }} ms{% else %}—{% endif %}</dd></div>
-    {% if d.approval_id %}<div><dt>Approval</dt><dd><a href="/approvals/{{ d.approval_id }}">View request</a></dd></div>{% endif %}
+    <div><dt>Latency</dt><dd class="num">{% if ev.latency_ms is not none %}{{ "%.2f"|format(ev.latency_ms) }} ms{% else %}—{% endif %}</dd></div>
+    {% if d.approval_id %}<div><dt>Approval</dt><dd><a href="/approvals/{{ d.approval_id }}">View request →</a></dd></div>{% endif %}
   </dl>
 </section>
+<br>
 
 {% set path = d|attack_path %}
 {% if path or d.taint_chain %}
 <section class="card">
-  <div class="card-head"><h2>Attack path</h2><span class="muted small">How untrusted content reached this call</span></div>
+  <div class="card-head"><div><h2>Attack path</h2><span class="sub">How untrusted content reached this call</span></div></div>
   <div class="card-body">
     {% for m in path %}
     <div class="path">
@@ -45,13 +46,14 @@
       <div class="node verdict {{ (ev.action or '')|lower }}"><div class="k">Decision</div><div class="v">{{ ev.action }}</div></div>
     </div>
     {% endfor %}
-    {% if d.taint_chain %}<p class="muted small">{% for c in d.taint_chain %}<code>{{ c }}</code>{% if not loop.last %}<br>{% endif %}{% endfor %}</p>{% endif %}
+    {% if d.taint_chain %}<div class="chain">{% for c in d.taint_chain %}<div><code>{{ c }}</code></div>{% endfor %}</div>{% endif %}
   </div>
 </section>
+<br>
 {% endif %}
 
 <div class="grid side">
-  <div>
+  <div class="stack">
     {% if d.reasons or d.reason %}
     <section class="card">
       <div class="card-head"><h2>Why</h2></div>
@@ -65,12 +67,10 @@
       </div>
     </section>
     {% endif %}
-
     <section class="card">
-      <div class="card-head"><h2>Arguments</h2><span class="muted small">secrets are masked before storage</span></div>
+      <div class="card-head"><h2>Arguments</h2><span class="sub">Secrets are masked before storage</span></div>
       <div class="card-body"><pre>{{ (d.arguments if d.arguments is defined else d.description or {})|tojson_pretty }}</pre></div>
     </section>
-
     {% if d.dlp %}
     <section class="card">
       <div class="card-head"><h2>Sensitive data</h2></div>
@@ -79,14 +79,14 @@
     {% endif %}
   </div>
 
-  <div>
+  <div class="stack">
     {% if d.detections %}
     <section class="card">
-      <div class="card-head"><h2>Detectors</h2></div>
+      <div class="card-head"><h2>Detectors</h2><span class="sub">Score of the untrusted content</span></div>
       <div class="card-body">
         {% for x in d.detections %}
         <div class="detector">
-          <span class="name">{{ x.detector }}</span>
+          <span class="name">{{ {"ml": "ML", "judge": "LLM judge"}.get(x.detector, x.detector) }}</span>
           <meter min="0" max="1" low="0.5" high="0.8" optimum="0" value="{{ x.score }}" aria-label="{{ x.detector }} score"></meter>
           <span class="score">{{ "%.2f"|format(x.score) }}</span>
           {% if x.rules %}<div class="rules">{% for r in x.rules[:6] %}<span class="chip">{{ r }}</span>{% endfor %}</div>{% endif %}
@@ -95,7 +95,6 @@
       </div>
     </section>
     {% endif %}
-
     {% if timeline %}
     <section class="card">
       <div class="card-head"><h2>Session timeline</h2></div>
@@ -105,18 +104,17 @@
           <li {% if t.id == ev.id %}class="current"{% endif %}>
             <span class="t">{{ t.timestamp.strftime("%H:%M:%S") }}</span>
             <span class="dot {{ (t.action or '')|lower }}"></span>
-            <span class="body"><a href="/events/{{ t.id }}" class="tool">{{ t.tool or t.type }}</a> <span class="muted small">{{ t.type|replace("_", " ") }}{% if t.action %} · {{ t.action }}{% endif %}</span></span>
+            <span><a href="/events/{{ t.id }}" class="tool">{{ t.tool or t.type }}</a><div class="sub-line">{{ t.type|replace("_", " ") }}{% if t.action %} · {{ t.action|lower|replace("_", " ") }}{% endif %}</div></span>
           </li>
           {% endfor %}
         </ul>
       </div>
     </section>
     {% endif %}
-
     {% if fps %}
     <section class="card">
       <div class="card-head"><h2>False-positive reports</h2></div>
-      <div class="card-body">{% for f in fps %}<p class="small"><b>{{ f.reporter }}</b>: {{ f.note or "no note" }}</p>{% endfor %}</div>
+      <div class="card-body stack">{% for f in fps %}<p class="small"><b>{{ f.reporter }}</b> · {{ f.note or "no note" }}</p>{% endfor %}</div>
     </section>
     {% endif %}
   </div>

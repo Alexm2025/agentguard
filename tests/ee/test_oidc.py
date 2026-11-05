@@ -151,7 +151,7 @@ async def test_oidc_login_provisions_user_with_mapped_role(tmp_path: Path, monke
         me = (await r.browser.get("/api/v1/auth/me")).json()  # type: ignore[attr-defined]
         assert me["display"] == "alice@acme.test" and me["role"] == "analyst"
         page = await r.browser.get("/login")  # type: ignore[attr-defined]
-        assert "Sign in with SSO" in page.text
+        assert "Continue with SSO" in page.text
 
 
 async def test_oidc_rejects_tampered_state_wrong_audience_and_domain(
