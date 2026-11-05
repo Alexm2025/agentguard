@@ -17,6 +17,10 @@ reads the value from a file, for Docker and Kubernetes secrets.
 | `AGENTGUARD_SESSION_TTL_HOURS` | `12` | |
 | `AGENTGUARD_BOOTSTRAP_ADMIN_EMAIL` / `_PASSWORD` | unset | first org + admin when the database has no users |
 | `AGENTGUARD_EVENT_RETENTION_DAYS` | `90` | used by `agentguard server prune` |
+| `AGENTGUARD_ALLOW_SIGNUP` | `false` | public self-service sign-up; each sign-up gets its own organization |
+| `AGENTGUARD_SMTP_URL` | unset | `smtp://user:pass@host:587` (STARTTLS) or `smtps://…:465`; enables email verification and password reset |
+| `AGENTGUARD_MAIL_FROM` | `AgentGuard <no-reply@localhost>` | sender of account emails |
+| `DATABASE_URL`, `RENDER_EXTERNAL_URL` | unset | fallbacks for the database and public URL on hosting platforms; `postgres://` URLs are accepted |
 | `AGENTGUARD_TRUST_PROXY_HEADERS` | `false` | honour `X-Forwarded-For` behind a trusted proxy |
 | `AGENTGUARD_HOST` / `AGENTGUARD_PORT` | `127.0.0.1` / `8000` | |
 | `AGENTGUARD_TLS_CERT` / `AGENTGUARD_TLS_KEY` | unset | serve TLS directly |

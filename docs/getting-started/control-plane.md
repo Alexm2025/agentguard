@@ -8,18 +8,25 @@ agentguard server run --migrate          # http://127.0.0.1:8000
 agentguard server seed-demo              # optional: demo sessions for a first look
 ```
 
+Set `AGENTGUARD_ALLOW_SIGNUP=true` to let people create their own workspaces from the landing
+page (each gets its own organization), and `AGENTGUARD_SMTP_URL` to require email verification and
+enable password reset.
+
 SQLite is the default; use `AGENTGUARD_DATABASE_URL=postgresql+psycopg://...` and
 `AGENTGUARD_REDIS_URL` in production.
 
 ## Dashboard
 
+- **Get started** - create an ingest key, copy a ready-made snippet for your stack, and load sample
+  sessions to see a blocked attack end to end.
 - **Events** - live feed with a 24-hour summary. Each blocked call shows its *attack path*: the
   untrusted source, the argument derived from it, the tool, and the decision.
 - **Approvals** - pending requests with Approve / Deny; history with who decided and through
   which channel.
 - **Policies** - editor with live validation; every save is a new, auditable revision.
 - **Metrics** - blocks, approval rate, false-positive reports, decision latency.
-- **Settings** - scoped API keys (shown once, stored hashed), members, audit-log verification.
+- **API keys & team** - scoped API keys (shown once, stored hashed), members, audit-log verification.
+- **Account** - profile and password change (other sessions are signed out).
 
 ## Roles
 

@@ -41,12 +41,20 @@ helm install agentguard deploy/helm/agentguard --set publicUrl=https://agentguar
 - The MCP gateway keeps per-session taint state in memory; its Service uses
   `sessionAffinity: ClientIP`. Keep `mcpGateway.replicas: 1` unless clients keep stable IPs.
 
-## Public demo on Render
+## Run it as a public service (Render)
 
-`render.yaml` is a blueprint for a free demo instance: **New → Blueprint → this repository**, then
-set the admin password. It runs migrations, starts the server and loads demo sessions
-(`agentguard server seed-demo`). Free instances have no persistent disk, so the demo database
-resets on restart.
+[**Deploy to Render**](https://render.com/deploy?repo=https://github.com/Alexm2025/agentguard) creates the
+service from `render.yaml`: the AgentGuard container, a managed Postgres database, generated secrets,
+and public sign-up enabled. Migrations run on every deploy.
+
+1. Sign in to Render, open the link above and confirm the blueprint.
+2. Optionally set `AGENTGUARD_SMTP_URL` and `AGENTGUARD_MAIL_FROM` (recommended for a public service:
+   new accounts must confirm their email, and users can reset passwords).
+3. Open the service URL, create your workspace, and follow **Get started**.
+
+The blueprint uses free plans so you can try it; free web services sleep when idle and free Postgres
+databases expire after 30 days. Switch both to paid plans for a service other people rely on, and add
+your own domain in Render's settings.
 
 ## TLS
 
