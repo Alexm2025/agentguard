@@ -28,7 +28,9 @@ AgentGuard reduces risk; it does not eliminate it. Known limitations:
 
 ## Project status
 
-- The **adversarial benchmark has not been run**; there are no end-to-end attack-removal numbers yet.
+- On AgentDojo replay, all layers together stop 92.2% of attack cases with a 22.7% false-positive
+  rate; some goals are never stopped (see [Benchmark](benchmark.md#known-misses)). Live-model runs
+  have not been done.
 - **Live-model tests** need provider API keys and have not been run in this repository's CI.
 - Latency figures were measured on a battery-throttled laptop; measure on your hardware.
 

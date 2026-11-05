@@ -153,8 +153,8 @@ Each milestone ends with: full test suite, `ruff check`, `ruff format --check`,
 | M6 Control plane | done | API tests: auth, CSRF, RBAC, tenant isolation, audit tamper detection, migrations |
 | M7 Dashboard | done | route tests, XSS escaping, CSRF; visually checked in Edge (dark/light/mobile) |
 | M8 Enterprise | done | OIDC against a local IdP, Slack reference signature vector, syslog/webhook delivery |
-| M9 Benchmark | **not started** | waiting on the choice of base suite (see below) |
-| M10 Deploy/CI | done, partly unverified | Dockerfile, compose, Helm, CI/release workflows written; image and chart not built here |
+| M9 Benchmark | done | AgentDojo v1.2.2 replay: combined ARE 92.2%, FPR 22.7% over 2,436 attack cases ([results](benchmark/results/agentdojo-replay.md)); live mode implemented, not run (no API key) |
+| M10 Deploy/CI | done | Docker image built and smoke-tested, Helm lint/template and Postgres/Redis tests run in CI |
 | M11 Docs | done | `mkdocs build --strict` passes; published to GitHub Pages by CI |
 
 ### Measured performance (this machine: Core Ultra 5 125H laptop on battery, ~1.2 GHz)
@@ -166,8 +166,8 @@ Each milestone ends with: full test suite, `ruff check`, `ruff format --check`,
 
 ## 4. Known gaps / environment constraints
 
-- **Benchmark (M9) not built.** Generating a large attack corpus was halted; the plan is to build
-  the replay/live harness on an established public suite (e.g. AgentDojo or InjecAgent).
+- **Benchmark live mode not run.** Replay results are committed; live runs against a real model need an API key.
+- **Public hosting needs an account.** `render.yaml` deploys the multi-tenant service in one click once signed in to Render.
 - The build machine has **no Docker, no Helm binary and no LLM API keys**:
   - Postgres/Redis tests are wired into CI service containers and skipped locally (SQLite locally).
   - Docker image, compose stack and Helm chart are linted/built only in CI.
