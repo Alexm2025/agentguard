@@ -26,6 +26,7 @@ from agentguard.server.auth import (
     get_db,
     resolve_principal,
 )
+from agentguard.server.dashboard import friendly
 from agentguard.server.models import (
     ApiKey,
     Approval,
@@ -84,6 +85,9 @@ def _attack_path(d: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 templates.env.filters["ago"] = _ago
+templates.env.filters["friendly"] = friendly.describe_event
+templates.env.filters["tool_label"] = friendly.tool_label
+templates.env.filters["story"] = friendly.story
 templates.env.filters["attack_path"] = _attack_path
 router = APIRouter(include_in_schema=False)
 LOGIN_CSRF = "ag_login_csrf"
@@ -212,7 +216,7 @@ async def login_submit(
         return render(request, "login.html", None, csrf=csrf_token, error="Your account has no organization.", sso=None)
     token, _ = await create_session(db, user, mem.org_id, request, settings)
     await audit.append(db, mem.org_id, f"user:{user.email}", "auth.login", user.id, {"ip": ip, "via": "dashboard"})
-    resp = RedirectResponse("/events", status_code=303)
+    resp = RedirectResponse("/home", status_code=303)
     set_session_cookie(resp, token, settings)
     resp.delete_cookie(LOGIN_CSRF)
     return resp
@@ -381,6 +385,12 @@ async def event_fp(
 # ---------------------------------------------------------------- approvals
 
 
+def _approval_view(a: Approval) -> dict[str, Any]:
+    d = services.approval_dict(a)
+    d["friendly"] = friendly.describe_approval(a.tool, a.data)
+    return d
+
+
 @router.get("/approvals")
 async def approvals_page(
     request: Request, p: Principal = Depends(ui_principal), db: AsyncSession = Depends(get_db)
@@ -395,7 +405,7 @@ async def approvals_page(
         .scalars()
         .all()
     )
-    items = [services.approval_dict(a) for a in rows]
+    items = [_approval_view(a) for a in rows]
     return render(
         request,
         "approvals.html",
@@ -416,7 +426,7 @@ async def approval_detail(
     apr = await db.get(Approval, approval_id)
     if apr is None or apr.org_id != p.org_id:
         raise HTTPException(status_code=404, detail="approval not found")
-    return render(request, "approval_detail.html", p, a=services.approval_dict(apr), d=apr.data)
+    return render(request, "approval_detail.html", p, a=_approval_view(apr), d=apr.data)
 
 
 @router.post("/approvals/{approval_id}/resolve")
@@ -438,7 +448,7 @@ async def approval_resolve(
     except ValueError as exc:
         error = str(exc)
     if request.headers.get("hx-request"):
-        return render(request, "_approval_row.html", p, a=services.approval_dict(apr), error=error)
+        return render(request, "_approval_row.html", p, a=_approval_view(apr), error=error)
     return RedirectResponse(f"/approvals/{approval_id}", status_code=303)
 
 

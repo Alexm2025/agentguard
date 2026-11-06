@@ -13,7 +13,7 @@ async def ui_login(stack: Stack, email: str = ADMIN_EMAIL) -> tuple[httpx.AsyncC
     r = await c.get("/login")
     token = re.search(r'name="csrf_token" value="([^"]+)"', r.text).group(1)  # type: ignore[union-attr]
     r = await c.post("/login", data={"email": email, "password": ADMIN_PW, "csrf_token": token})
-    assert r.status_code == 303 and r.headers["location"] == "/events"
+    assert r.status_code == 303 and r.headers["location"] == "/home"
     page = await c.get("/events")
     csrf = re.search(r'"X-CSRF-Token": "([^"]+)"', page.text).group(1)  # type: ignore[union-attr]
     return c, csrf
@@ -47,6 +47,8 @@ async def test_pages_render_with_data(stack: Stack) -> None:
     ).json()
     c, csrf = await ui_login(stack)
     for path in [
+        "/home",
+        "/rules",
         "/events",
         "/events?action=BLOCK",
         "/events/feed",
@@ -116,7 +118,7 @@ async def test_settings_keys_and_xss_escaping(stack: Stack) -> None:
     assert "<script>alert(1)</script>" not in page and "&lt;script&gt;alert(1)&lt;/script&gt;" in page
     r = await c.post("/settings/keys", data={"name": "ui key", "scopes": ["ingest", "read"], "csrf_token": csrf})
     assert r.status_code == 200 and re.search(r"ag_live_[A-Za-z0-9]{40}", r.text)
-    assert "chain verified" in r.text
+    assert "Untouched" in r.text
     r = await c.post("/events/evt_xss/false-positive", data={"note": "fine", "csrf_token": csrf})
     assert r.status_code == 303
 

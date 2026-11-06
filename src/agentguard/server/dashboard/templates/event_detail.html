@@ -1,23 +1,36 @@
 {% extends "base.html" %}
-{% from "_icons.html" import icon, action_pill %}
-{% block title %}{{ ev.tool or ev.type }}{% endblock %}
+{% from "_icons.html" import icon, action_pill, tile, badge %}
+{% block title %}{{ (ev|friendly).headline }}{% endblock %}
 {% block content %}
-<a class="crumb" href="/events">{{ icon("back") }}All events</a>
-<div class="page-head">
-  <div class="hero">
-    {% if ev.action %}{{ action_pill(ev.action, lg=True) }}{% endif %}
-    <span class="tool">{{ ev.tool or ev.type }}</span>
-    {% if ev.risk %}<span class="risk {{ ev.risk }}">{{ ev.risk }} risk</span>{% endif %}
+{% set f = ev|friendly %}
+<a class="crumb" href="/events">{{ icon("back") }}All activity</a>
+<section class="card summary {{ f.tone }}">
+  <div class="summary-head">
+    {{ tile(f.icon, f.tone, "xl") }}
+    <div><div class="row">{{ badge(f.status, f.tone) }}<span class="muted small">{{ ev.timestamp.strftime("%b %d, %H:%M") }} · {{ ev.timestamp|ago }}</span></div>
+    <h1>{{ f.headline }}</h1>{% if f.detail %}<p>{{ f.detail }}</p>{% endif %}</div>
   </div>
-  {% if p.can("fp:write") and ev.action in ("BLOCK", "REQUIRE_APPROVAL", "REDACT") %}
-  <form method="post" action="/events/{{ ev.id }}/false-positive" class="inline">
-    <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-    <input type="text" name="note" maxlength="2000" placeholder="Why was this legitimate?" aria-label="False positive note">
-    <button type="submit" class="secondary">Report false positive</button>
-  </form>
+  {% if ev.type != "tool_result" %}
+  <ol class="story">
+    {% for s in ev|story %}<li class="{{ s.tone }}">{{ tile(s.icon, s.tone) }}<span>{{ s.text }}</span></li>{% endfor %}
+  </ol>
   {% endif %}
-</div>
+  <div class="summary-actions">
+    {% if d.approval_id %}<a class="button" href="/approvals/{{ d.approval_id }}">{{ icon("hand") }}See the request</a>{% endif %}
+    {% if p.can("fp:write") and ev.action in ("BLOCK", "REQUIRE_APPROVAL", "REDACT") %}
+    <form method="post" action="/events/{{ ev.id }}/false-positive" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+      <input type="text" name="note" maxlength="2000" placeholder="Optional: why was this fine?" aria-label="Why this was a mistake">
+      <button type="submit" class="secondary">{{ icon("x") }}This was a mistake</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if fps %}<div class="notice small">{{ icon("check") }} Reported as a mistake by {{ fps[0].reporter }}{% if fps|length > 1 %} and {{ fps|length - 1 }} other{{ "s" if fps|length > 2 }}{% endif %}. Thanks - this helps tune your rules.</div>{% endif %}
+</section>
 
+<details class="tech">
+<summary>{{ icon("code") }}Technical details <span class="muted small">for developers and security teams</span></summary>
+<div class="tech-body">
 <section class="card">
   <dl class="meta">
     <div><dt>When</dt><dd title="{{ ev.timestamp.isoformat() }}">{{ ev.timestamp.strftime("%b %d, %H:%M:%S") }} · {{ ev.timestamp|ago }}</dd></div>
@@ -33,7 +46,7 @@
 {% set path = d|attack_path %}
 {% if path or d.taint_chain %}
 <section class="card">
-  <div class="card-head"><div><h2>Attack path</h2><span class="sub">How untrusted content reached this call</span></div></div>
+  <div class="card-head"><div><h2>Attack path</h2><span class="sub">How outside content reached this action</span></div></div>
   <div class="card-body">
     {% for m in path %}
     <div class="path">
@@ -111,12 +124,8 @@
       </div>
     </section>
     {% endif %}
-    {% if fps %}
-    <section class="card">
-      <div class="card-head"><h2>False-positive reports</h2></div>
-      <div class="card-body stack">{% for f in fps %}<p class="small"><b>{{ f.reporter }}</b> · {{ f.note or "no note" }}</p>{% endfor %}</div>
-    </section>
-    {% endif %}
   </div>
 </div>
+</div>
+</details>
 {% endblock %}

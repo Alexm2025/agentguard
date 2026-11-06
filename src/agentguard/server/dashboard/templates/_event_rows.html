@@ -1,20 +1,6 @@
-{% from "_icons.html" import icon, action_pill %}
-{% for e in events %}
-<tr>
-  <td class="time"><a class="rowlink" href="/events/{{ e.id }}" title="{{ e.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC">{{ e.timestamp|ago }}</a></td>
-  <td>{% if e.action %}{{ action_pill(e.action) }}{% else %}<span class="pill plain">{{ e.type|replace("_", " ") }}</span>{% endif %}</td>
-  <td><a class="tool" href="/events/{{ e.id }}">{{ e.tool or e.type }}</a>{% if e.type == "tool_result" %}<div class="sub-line">tool result</div>{% endif %}</td>
-  <td class="why"><div class="clip">
-    {%- if e.data.taint_chain %}<code>{{ e.data.taint_chain[0] }}</code>
-    {%- elif e.data.reasons %}{{ e.data.reasons[0].message }}
-    {%- elif e.data.reason %}{{ e.data.reason }}
-    {%- elif e.data.source_ref %}<span class="muted">{{ e.data.source_ref }}</span>
-    {%- else %}<span class="muted">—</span>{% endif -%}
-  </div></td>
-  <td><span class="chip">{{ e.source }}</span></td>
-  <td class="time">{% if e.latency_ms is not none %}{{ "%.1f"|format(e.latency_ms) }} ms{% endif %}</td>
-</tr>
+{% from "_icons.html" import icon %}
+{% for e in events %}{% include "_feed_item.html" %}
 {% else %}
-<tr><td colspan="6"><div class="empty"><div class="ring">{{ icon("inbox") }}</div><strong>No events yet</strong>Connect an agent with an <code>ingest</code> API key, or load sample sessions.
-  <div><a class="button secondary" href="/welcome">{{ icon("rocket") }}Get started</a></div></div></td></tr>
+<div class="empty"><div class="ring">{{ icon("smile") }}</div><strong>Nothing here yet</strong>When your agent does something, it shows up here in plain words.
+  <div><a class="button" href="/welcome">{{ icon("plug") }}Connect an agent</a></div></div>
 {% endfor %}

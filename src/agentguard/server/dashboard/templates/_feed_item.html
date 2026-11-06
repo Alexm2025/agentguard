@@ -1,0 +1,12 @@
+{% from "_icons.html" import tile, badge %}{% set f = e|friendly %}
+<a class="feed-item" href="/events/{{ e.id }}">
+  {{ tile(f.icon, f.tone) }}
+  <span class="feed-text">
+    <span class="feed-title">{{ f.headline }}</span>
+    {% if f.detail %}<span class="feed-detail">{{ f.detail }}</span>{% endif %}
+  </span>
+  <span class="feed-meta">
+    {{ badge(f.status, f.tone) }}
+    <span class="feed-time" title="{{ e.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC">{{ e.timestamp|ago }}</span>
+  </span>
+</a>
