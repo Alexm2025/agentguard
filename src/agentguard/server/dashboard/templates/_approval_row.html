@@ -1,23 +1,27 @@
-<section class="card approval{% if a.status != 'pending' %} done{% endif %}" id="apr-{{ a.id }}">
-  <div class="card-head">
-    <div class="row"><span class="tool">{{ a.tool }}</span>{% if a.risk %}<span class="risk {{ a.risk }}">{{ a.risk }} risk</span>{% endif %}</div>
-    <span class="pill {{ a.status }}">{{ a.status }}</span>
+{% from "_icons.html" import icon, tile, badge %}{% set f = a.friendly %}
+<section class="card ask{% if a.status != 'pending' %} done{% endif %}" id="apr-{{ a.id }}">
+  <div class="ask-head">
+    {{ tile(f.icon, "warn", "xl") }}
+    <div class="ask-text">
+      <h2>{{ f.headline }}</h2>
+      {% if f.detail %}<p>{{ f.detail }}</p>{% endif %}
+      <div class="ask-meta"><span>{{ icon("clock") }}Asked {{ a.created_at|ago }}</span>{% if a.status == "pending" %}<span>{{ icon("ban") }}Refused automatically {{ a.expires_at|ago }} if nobody answers</span>{% endif %}{% if a.resolved_by %}<span>{{ icon("user") }}Decided by {{ a.resolved_by }}</span>{% endif %}</div>
+    </div>
+    {% if a.status != "pending" %}{{ badge({"approved": "Allowed", "denied": "Not allowed", "expired": "Timed out"}.get(a.status, a.status|capitalize), "ok" if a.status == "approved" else "danger") }}<span class="sr">{{ a.status }}</span>{% endif %}
   </div>
-  <div class="card-body">
-    <div class="kv"><span>Requested <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span>{% if a.resolved_by %}<span>Decided by <b>{{ a.resolved_by }}</b></span>{% endif %}</div>
-    {% if a.reasons %}<ul class="reasons">{% for r in a.reasons[:3] %}<li><span class="msg">{{ r.message }}</span></li>{% endfor %}</ul>{% endif %}
-    {% if a.taint_chain %}<div class="notice warn small"><code>{{ a.taint_chain[0] }}</code></div>{% endif %}
-    <pre>{{ a.arguments|tojson_pretty }}</pre>
-    {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
-  </div>
-  <div class="actions">
-    <a class="button ghost" href="/approvals/{{ a.id }}">Details</a>
-    {% if a.status == "pending" and p.can("approvals:resolve") %}
-    <form class="inline" hx-post="/approvals/{{ a.id }}/resolve" hx-target="#apr-{{ a.id }}" hx-swap="outerHTML" method="post" action="/approvals/{{ a.id }}/resolve">
-      <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-      <button name="decision" value="deny" type="submit" class="danger">Deny</button>
-      <button name="decision" value="approve" type="submit" class="approve">Approve</button>
-    </form>
-    {% endif %}
-  </div>
+  <details class="what">
+    <summary>What exactly will it do?</summary>
+    <dl class="args">{% for k, v in (a.arguments or {}).items() %}<div><dt>{{ k|tool_label }}</dt><dd>{{ v if v is string else v|tojson }}</dd></div>{% endfor %}</dl>
+    <p class="small muted">Tool: <code>{{ a.tool }}</code>{% if a.risk %} · {{ a.risk }} risk{% endif %} · <a href="/approvals/{{ a.id }}">full details</a></p>
+  </details>
+  {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+  {% if a.status == "pending" and p.can("approvals:resolve") %}
+  <form class="decide" hx-post="/approvals/{{ a.id }}/resolve" hx-target="#apr-{{ a.id }}" hx-swap="outerHTML" method="post" action="/approvals/{{ a.id }}/resolve">
+    <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+    <button name="decision" value="deny" type="submit" class="big danger">{{ icon("x") }}Don't allow</button>
+    <button name="decision" value="approve" type="submit" class="big approve">{{ icon("check") }}Allow it</button>
+  </form>
+  {% elif a.status == "pending" %}
+  <p class="small muted pad">Only admins and analysts can decide.</p>
+  {% endif %}
 </section>

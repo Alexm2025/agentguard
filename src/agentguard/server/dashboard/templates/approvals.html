@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Approvals{% endblock %}
+{% block title %}Needs your OK{% endblock %}
 {% block content %}
 <div class="page-head">
   <div>
-    <h1>Approvals</h1>
-    <p>Risky actions are paused until someone on your team decides. The agent waits for the answer.</p>
+    <h1>Needs your OK</h1>
+    <p>When something looks risky, your agent pauses and asks. Allow it if you expected it - if you're not sure, don't.</p>
   </div>
   {% if pending %}<span class="pill pending lg">{{ pending|length }} waiting</span>{% endif %}
 </div>
@@ -13,20 +13,20 @@
 <div class="approvals" id="pending-list" hx-get="/approvals" hx-select="#pending-list > *" hx-trigger="every 5s" hx-swap="innerHTML">
   {% for a in pending %}{% include "_approval_row.html" %}
   {% else %}
-  <section class="card"><div class="empty"><div class="ring">{{ icon("check-circle") }}</div><strong>All clear</strong>Nothing is waiting for review.</div></section>
+  <section class="card"><div class="empty"><div class="ring ok">{{ icon("check") }}</div><strong>You're all caught up</strong>Nothing is waiting for you. Requests show up here as soon as your agent asks.</div></section>
   {% endfor %}
 </div>
 
 {% if history %}
 <br>
 <section class="card">
-  <div class="card-head"><h2>Recent decisions</h2></div>
+  <div class="card-head"><h2>Earlier decisions</h2></div>
   <div class="table-wrap">
     <table class="data compact">
-      <thead><tr><th>Requested</th><th>Tool</th><th>Outcome</th><th>Decided by</th><th>Via</th></tr></thead>
+      <thead><tr><th>When</th><th>What</th><th>Answer</th><th>Who</th></tr></thead>
       <tbody>{% for a in history %}
-        <tr><td class="time"><a class="rowlink" href="/approvals/{{ a.id }}">{{ a.created_at|ago }}</a></td><td class="tool">{{ a.tool }}</td>
-        <td><span class="pill {{ a.status }}">{{ a.status }}</span></td><td>{{ a.resolved_by or "—" }}</td><td>{% if a.channel %}<span class="chip">{{ a.channel }}</span>{% else %}—{% endif %}</td></tr>
+        <tr><td class="time"><a class="rowlink" href="/approvals/{{ a.id }}">{{ a.created_at|ago }}</a></td><td>{{ a.friendly.headline }}</td>
+        <td><span class="pill {{ a.status }}">{{ {"approved": "Allowed", "denied": "Not allowed", "expired": "Timed out"}.get(a.status, a.status) }}</span></td><td>{{ a.resolved_by or "—" }}</td></tr>
       {% endfor %}</tbody>
     </table>
   </div>

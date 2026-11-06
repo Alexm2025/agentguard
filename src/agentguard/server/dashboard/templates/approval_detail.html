@@ -1,32 +1,34 @@
 {% extends "base.html" %}
-{% from "_icons.html" import icon %}
-{% block title %}Approval · {{ a.tool }}{% endblock %}
+{% from "_icons.html" import icon, tile %}
+{% block title %}{{ a.friendly.headline }}{% endblock %}
 {% block content %}
-<a class="crumb" href="/approvals">{{ icon("back") }}Approvals</a>
+<a class="crumb" href="/approvals">{{ icon("back") }}Needs your OK</a>
 <div class="page-head">
-  <div class="hero"><span class="pill {{ a.status }} lg">{{ a.status }}</span><span class="tool">{{ a.tool }}</span>{% if a.risk %}<span class="risk {{ a.risk }}">{{ a.risk }} risk</span>{% endif %}</div>
-  <a class="button secondary" href="/events/{{ a.event_id }}">View triggering event</a>
+  <div class="summary-head">{{ tile(a.friendly.icon, "warn", "xl") }}<div><span class="pill {{ a.status }}">{{ a.status }}</span><h1>{{ a.friendly.headline }}</h1>{% if a.friendly.detail %}<p>{{ a.friendly.detail }}</p>{% endif %}</div></div>
+  <a class="button secondary" href="/events/{{ a.event_id }}">See the full story</a>
 </div>
 <div class="grid side">
   <div class="stack">
-    {% if a.taint_chain %}<section class="card"><div class="card-head"><h2>Taint chain</h2></div><div class="card-body">{% for c in a.taint_chain %}<div><code>{{ c }}</code></div>{% endfor %}</div></section>{% endif %}
-    <section class="card"><div class="card-head"><h2>Why approval is needed</h2></div><div class="card-body"><ul class="reasons">{% for r in a.reasons or [] %}<li><span class="msg">{{ r.message }}</span></li>{% endfor %}</ul></div></section>
-    <section class="card"><div class="card-head"><h2>Arguments</h2></div><div class="card-body"><pre>{{ a.arguments|tojson_pretty }}</pre></div></section>
+    <section class="card"><div class="card-head"><h2>What it will do</h2></div>
+      <div class="card-body"><dl class="args">{% for k, v in (a.arguments or {}).items() %}<div><dt>{{ k|tool_label }}</dt><dd>{{ v if v is string else v|tojson }}</dd></div>{% endfor %}</dl>
+      <p class="small muted">Tool: <code>{{ a.tool }}</code>{% if a.risk %} · {{ a.risk }} risk{% endif %}</p></div></section>
+    <section class="card"><div class="card-head"><h2>Why it was paused</h2></div><div class="card-body"><ul class="reasons">{% for r in a.reasons or [] %}<li><span class="msg">{{ r.message }}</span></li>{% endfor %}</ul></div></section>
+    {% if a.taint_chain %}<section class="card"><div class="card-head"><h2>Where the details came from</h2></div><div class="card-body">{% for c in a.taint_chain %}<div><code>{{ c }}</code></div>{% endfor %}</div></section>{% endif %}
   </div>
   <section class="card">
-    <div class="card-head"><h2>Decision</h2></div>
+    <div class="card-head"><h2>Your answer</h2></div>
     <div class="card-body">
       {% if a.status == "pending" and p.can("approvals:resolve") %}
-      <form method="post" action="/approvals/{{ a.id }}/resolve">
+      <form method="post" action="/approvals/{{ a.id }}/resolve" class="stack">
         <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-        <label>Note <input type="text" name="note" maxlength="1000" placeholder="e.g. verified with the requester"><span class="hint">Saved in the audit log.</span></label>
-        <div class="row"><button name="decision" value="approve" type="submit" class="approve">Approve</button><button name="decision" value="deny" type="submit" class="danger">Deny</button></div>
+        <label>Note (optional) <input type="text" name="note" maxlength="1000" placeholder="e.g. I asked for this"><span class="hint">Saved in the audit log.</span></label>
+        <div class="decide"><button name="decision" value="deny" type="submit" class="big danger">{{ icon("x") }}Don't allow</button><button name="decision" value="approve" type="submit" class="big approve">{{ icon("check") }}Allow it</button></div>
       </form>
       {% elif a.resolved_by %}
       <p>Decided by <b>{{ a.resolved_by }}</b> via <span class="chip">{{ a.channel }}</span> {{ a.resolved_at|ago }}.</p>
       {% if a.resolution_note %}<p class="muted">“{{ a.resolution_note }}”</p>{% endif %}
       {% else %}<p class="muted">This request {{ a.status }} without a decision.</p>{% endif %}
-      <br><div class="kv small"><span>Requested <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span></div>
+      <br><div class="kv small"><span>Asked <b>{{ a.created_at|ago }}</b></span><span>Expires <b>{{ a.expires_at|ago }}</b></span></div>
     </div>
   </section>
 </div>
