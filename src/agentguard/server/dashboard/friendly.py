@@ -41,25 +41,27 @@ _SOURCE_KINDS: list[tuple[tuple[str, ...], str]] = [
     (("issue", "ticket", "github", "repo"), "an issue or ticket"),
     (("review", "rating"), "online reviews"),
 ]
-_SECRETS = {
-    "aws_access_key": "an AWS key",
-    "aws_secret_key": "an AWS secret key",
-    "github_token": "a GitHub token",
-    "openai_key": "an OpenAI key",
-    "anthropic_key": "an Anthropic key",
-    "slack_token": "a Slack token",
-    "stripe_key": "a Stripe key",
-    "google_api_key": "a Google API key",
-    "private_key": "a private key",
-    "jwt": "a login token",
-    "agentguard_key": "an AgentGuard key",
-    "password_assignment": "a password",
-    "credit_card": "a card number",
-    "iban": "a bank account number",
-    "us_ssn": "a social security number",
-    "email_address": "an email address",
-    "phone_number": "a phone number",
-}
+# Plain names for DLP pattern ids (labels only, no secret values).
+_SECRET_NAMES: tuple[tuple[str, str], ...] = (
+    ("aws_access_key", "an AWS key"),
+    ("aws_secret_key", "an AWS secret key"),
+    ("github_token", "a GitHub token"),
+    ("openai_key", "an OpenAI key"),
+    ("anthropic_key", "an Anthropic key"),
+    ("slack_token", "a Slack token"),
+    ("stripe_key", "a Stripe key"),
+    ("google_api_key", "a Google API key"),
+    ("private_key", "a private key"),
+    ("jwt", "a login token"),
+    ("agentguard_key", "an AgentGuard key"),
+    ("password_assignment", "a password"),
+    ("credit_card", "a card number"),
+    ("iban", "a bank account number"),
+    ("us_ssn", "a social security number"),
+    ("email_address", "an email address"),
+    ("phone_number", "a phone number"),
+)
+_SECRETS: dict[str, str] = dict(_SECRET_NAMES)
 
 
 def tool_label(name: str | None) -> str:
