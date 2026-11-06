@@ -44,8 +44,10 @@ def page_name(path: str) -> str:
 
 def rewrite(html: str) -> str:
     html = html.replace('<script src="/static/htmx.min.js" defer></script>', "")
+    html = html.replace('<script src="/static/app.js" defer></script>', "")
+    html = html.replace('href="/static/fonts/', 'href="fonts/')
     html = html.replace('href="/static/app.css"', 'href="app.css"')
-    html = html.replace('<span class="live">Live</span>', "").replace("Refreshes every 3 seconds", "Snapshot")
+    html = html.replace('<span class="live">Live</span>', "").replace("Updates automatically", "Snapshot")
     html = re.sub(r'\s(hx-[a-z-]+)=(\'[^\']*\'|"[^"]*")', "", html)
 
     def link(m: re.Match[str]) -> str:
@@ -87,7 +89,7 @@ async def main(out: Path) -> None:
         token = re.search(r'name="csrf_token" value="([^"]+)"', login.text).group(1)  # type: ignore[union-attr]
         r = await c.post("/login", data={"email": EMAIL, "password": PASSWORD, "csrf_token": token})
         assert r.status_code == 303, r.text
-        todo = ["/events", "/approvals", "/policies", "/metrics", "/settings"]
+        todo = ["/home", "/events", "/approvals", "/rules", "/welcome", "/policies", "/metrics", "/settings"]
         todo += [f"/events?action={a}" for a in ("BLOCK", "REQUIRE_APPROVAL", "REDACT", "ALLOW")]
         seen: set[str] = set()
         while todo:
@@ -104,9 +106,10 @@ async def main(out: Path) -> None:
                 if not target.endswith(("/new", "/feed")):
                     todo.append(target)
             (out / name).write_text(rewrite(html), encoding="utf-8")
-        shutil.copy(out / "events.html", out / "index.html")
-    static = Path(__file__).resolve().parents[1] / "src" / "agentguard" / "server" / "dashboard" / "static" / "app.css"
-    shutil.copy(static, out / "app.css")
+        shutil.copy(out / "home.html", out / "index.html")
+    static = Path(__file__).resolve().parents[1] / "src" / "agentguard" / "server" / "dashboard" / "static"
+    shutil.copy(static / "app.css", out / "app.css")
+    shutil.copytree(static / "fonts", out / "fonts", dirs_exist_ok=True)
     await db.dispose()
     print(f"wrote {len(list(out.glob('*.html')))} pages to {out}")
 
