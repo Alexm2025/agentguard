@@ -27,6 +27,16 @@ send_email.to derived from read_web(url=https://trails.example/rmnp)   →   BLO
 
 ![Attack path for a blocked call](docs/assets/dashboard-attack-path.png)
 
+### Made for people, not just security teams
+
+The console explains everything in plain words: "Stopped your agent from trying to send an email - that
+address came from a web page, not from you." Risky actions wait on a **Needs your OK** screen with two big
+buttons, and protections are simple on/off switches (the YAML editor is still there under *Advanced*).
+
+| Home | Needs your OK | Protection rules |
+|---|---|---|
+| ![Home](docs/assets/dashboard-home.png) | ![Approvals](docs/assets/dashboard-approvals.png) | ![Rules](docs/assets/dashboard-rules.png) |
+
 ## Results on AgentDojo
 
 Evaluated on the public [AgentDojo](https://github.com/ethz-spylab/agentdojo) benchmark (2,436 attack
@@ -98,8 +108,9 @@ See the [deployment guide](https://alexm2025.github.io/agentguard/operations/dep
 
 - Self-service sign-up with an organization per workspace, email verification and password reset
   (when SMTP is configured), role-based access (admin / analyst / viewer), scoped API keys.
-- Live event feed with 24-hour activity, attack-path view, approval queue, policy editor with live
-  validation and revision history, metrics, false-positive reporting.
+- Plain-language home screen and activity feed, a step-by-step story for every stopped action, one-click
+  Allow / Don't allow, protection switches, adding teammates from the console; for experts, the attack-path
+  view, policy editor with live validation and revision history, metrics and false-positive reporting.
 - SSO (OIDC), multi-organization admin, SIEM export (syslog/CEF, signed webhooks) and Slack approvals
   in `ee/`.
 - Security: strict CSP, CSRF protection, hashed keys and sessions, rate limits, tenant isolation,

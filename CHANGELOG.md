@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Plain-language console: a Home screen with a one-line status, an activity feed that describes every
+  decision in everyday words with clear icons, and a step-by-step story for each stopped action.
+- **Needs your OK** screen with large Allow / Don't allow buttons.
+- **Protection rules** page: five on/off switches, fail-mode and approval-timeout choices; saves a new
+  revision of the live policy, so changes can be undone in the advanced editor.
+- Add teammates (email, role, temporary password) from the Team & keys page.
+- Copy buttons on the Connect page; light theme by default, dark theme follows the system.
+
+### Changed
+- Sign-in now lands on Home. Technical details (attack path, detectors, arguments) are folded under
+  "Technical details" on each event.
+
 ## [0.1.0] - 2026-10-27
 
 ### Added
