@@ -8,28 +8,28 @@
   <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
 </head>
 <body {% if p and p.csrf_token %}hx-headers='{"X-CSRF-Token": "{{ p.csrf_token }}"}'{% endif %}>
 {% if p %}
 {% set path = request.url.path %}
 <div class="shell">
   <aside class="sidebar">
-    <a class="brand" href="/events">{{ mark() }}<span>AgentGuard</span></a>
+    <a class="brand" href="/home">{{ mark() }}<span>AgentGuard</span></a>
     <div class="org"><span class="dot">{{ (org_name or "A")[:1] }}</span><div><div class="name">{{ org_name or "Organization" }}</div><div class="plan">{{ features.edition }}</div></div></div>
     <nav class="nav" aria-label="Main">
-      <a href="/welcome" {% if path.startswith('/welcome') %}aria-current="page"{% endif %}>{{ icon("rocket") }}Get started</a>
+      <a href="/home" {% if path.startswith('/home') %}aria-current="page"{% endif %}>{{ icon("home") }}Home</a>
+      <a href="/approvals" {% if path.startswith('/approvals') %}aria-current="page"{% endif %}>{{ icon("hand") }}Needs your OK{% if pending_count %}<span class="count">{{ pending_count }}</span>{% endif %}</a>
+      <a href="/events" {% if path.startswith('/events') %}aria-current="page"{% endif %}>{{ icon("activity") }}Activity</a>
+      <a href="/rules" {% if path.startswith('/rules') or path.startswith('/policies') %}aria-current="page"{% endif %}>{{ icon("shield") }}Protection rules</a>
     </nav>
-    <div class="nav-label">Monitor</div>
-    <nav class="nav" aria-label="Monitor">
-      <a href="/events" {% if path.startswith('/events') %}aria-current="page"{% endif %}>{{ icon("activity") }}Events</a>
-      <a href="/approvals" {% if path.startswith('/approvals') %}aria-current="page"{% endif %}>{{ icon("check-circle") }}Approvals{% if pending_count %}<span class="count">{{ pending_count }}</span>{% endif %}</a>
-      <a href="/metrics" {% if path.startswith('/metrics') %}aria-current="page"{% endif %}>{{ icon("chart") }}Metrics</a>
+    <div class="nav-label">Setup</div>
+    <nav class="nav" aria-label="Setup">
+      <a href="/welcome" {% if path.startswith('/welcome') %}aria-current="page"{% endif %}>{{ icon("plug") }}Connect an agent</a>
+      <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>{{ icon("users") }}Team &amp; keys</a>
+      <a href="/metrics" {% if path.startswith('/metrics') %}aria-current="page"{% endif %}>{{ icon("chart") }}Reports</a>
     </nav>
-    <div class="nav-label">Configure</div>
-    <nav class="nav" aria-label="Configure">
-      <a href="/policies" {% if path.startswith('/policies') %}aria-current="page"{% endif %}>{{ icon("file") }}Policies</a>
-      <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>{{ icon("key") }}API keys &amp; team</a>
-    </nav>
+    <div class="side-help">{{ icon("info") }}<span>AgentGuard checks every action your AI agent takes and stops the dangerous ones.</span></div>
     <div class="side-foot">
       <a class="who" href="/account" {% if path.startswith('/account') %}aria-current="page"{% endif %}>
         <span class="avatar">{{ p.display[:1] }}</span>
