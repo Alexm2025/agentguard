@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon, tile %}
+{% block title %}Protection rules{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Protection rules</h1>
+    <p>Choose what AgentGuard protects you from. Everything is on by default - that's the safest choice.</p>
+  </div>
+  <a class="button ghost" href="/policies">{{ icon("code") }}Advanced editor</a>
+</div>
+
+{% if saved %}<div class="notice ok">{{ icon("check") }} Saved. Your agents will use the new rules within a few seconds.</div><br>{% endif %}
+{% set can_edit = p.can("policies:write") %}
+{% if not can_edit %}<div class="notice">{{ icon("lock") }} Only admins can change these. You can still see what's turned on.</div><br>{% endif %}
+
+<form method="post" action="/rules" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+  <section class="card">
+    <div class="card-head"><div><h2>What to protect</h2><span class="sub">Turn a switch off only if it gets in your way</span></div></div>
+    <div class="toggles">
+      {% for pr in protections %}
+      <label class="toggle-row">
+        {{ tile(pr.icon, "brand") }}
+        <span class="toggle-text"><b>{{ pr.title }}</b><span>{{ pr.desc }}</span></span>
+        <input type="checkbox" class="switch" name="on_{{ pr.key }}" value="1" {% if state.on[pr.key] %}checked{% endif %} {% if not can_edit %}disabled{% endif %} aria-label="{{ pr.title }}">
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="grid two">
+    <section class="card">
+      <div class="card-head"><div><h2>If AgentGuard can't check an action</h2><span class="sub">For example during a network problem</span></div></div>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="fail_mode" value="closed" {% if state.fail_mode != "open" %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>
+          <span>{{ icon("lock") }}<b>Play it safe</b><small>Stop the action. Recommended.</small></span></label>
+        <label class="choice"><input type="radio" name="fail_mode" value="open" {% if state.fail_mode == "open" %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>
+          <span>{{ icon("zap") }}<b>Keep going</b><small>Let it through and record it.</small></span></label>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>How long to wait for your OK</h2><span class="sub">After this, the action is refused</span></div></div>
+      <div class="choices">
+        {% for secs, label in waits %}
+        <label class="choice"><input type="radio" name="wait" value="{{ secs }}" {% if state.wait == secs %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>
+          <span>{{ icon("clock") }}<b>{{ label }}</b></span></label>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  {% if can_edit %}
+  <div class="savebar">
+    <span class="muted small">{% if policy %}Changes are saved as a new version of “{{ policy.name }}” - you can undo them any time in the advanced editor.{% else %}Saving creates your workspace's rules. You can undo any change later.{% endif %}</span>
+    <button type="submit" class="big">{{ icon("check") }}Save changes</button>
+  </div>
+  {% endif %}
+</form>
+{% endblock %}

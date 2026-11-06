@@ -53,9 +53,13 @@ async def test_signup_creates_isolated_org_and_onboarding(stack: Stack) -> None:
     r = await signup(c)
     assert r.status_code == 303 and r.headers["location"] == "/welcome"
     welcome = await c.get("/welcome")
-    assert welcome.status_code == 200 and "Protect your first agent" in welcome.text and "Startup Inc" in welcome.text
+    assert (
+        welcome.status_code == 200
+        and "Protect your AI agent in 3 steps" in welcome.text
+        and "Startup Inc" in welcome.text
+    )
     # logged-in visitors skip the landing page
-    assert (await c.get("/")).headers["location"] == "/events"
+    assert (await c.get("/")).headers["location"] == "/home"
     async with stack.db.sessionmaker() as s:
         user = (await s.execute(select(User).where(User.email == "new@startup.test"))).scalar_one()
         mem = (await s.execute(select(Membership).where(Membership.user_id == user.id))).scalar_one()

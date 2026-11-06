@@ -1,62 +1,77 @@
 {% extends "base.html" %}
-{% from "_icons.html" import icon %}
-{% block title %}API keys & team{% endblock %}
+{% from "_icons.html" import icon, tile %}
+{% block title %}Team & keys{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>API keys &amp; team</h1><p>Credentials for your agents and gateways, who has access, and the audit trail.</p></div></div>
+<div class="page-head"><div><h1>Team &amp; keys</h1><p>Who can use this workspace, and the keys your agents use to connect.</p></div></div>
+
+{% if request.query_params.get("added") %}<div class="notice ok">{{ icon("check") }} Teammate added. Send them the sign-in link and their temporary password - they can change it under their account.</div><br>{% endif %}
 
 {% if new_key %}
-<div class="notice warn"><strong>Copy your new API key now.</strong> It is stored only as a hash and won't be shown again.</div><br>
-<pre class="key">{{ new_key }}</pre><br>
+<div class="notice warn">{{ icon("key") }} <span><strong>Copy your new key now.</strong> For your security it won't be shown again.</span></div><br>
+<div class="copybox"><pre class="key" id="new-key">{{ new_key }}</pre><button type="button" class="secondary" data-copy="#new-key">{{ icon("copy") }}<span class="label">Copy</span></button></div><br>
 {% endif %}
 
-{% if p.can("keys:manage") %}
-<section class="card">
-  <div class="card-head"><div><h2>API keys</h2><span class="sub">Use <code>ingest</code> for agents and gateways; give <code>admin</code> to automation only</span></div></div>
-  <div class="toolbar">
-    <form method="post" action="/settings/keys" class="inline">
-      <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
-      <label>Name <input type="text" name="name" required maxlength="200" placeholder="support-bot production"></label>
-      <div class="row">{% for s in ["ingest", "read", "approve", "gateway", "admin"] %}<label class="check"><input type="checkbox" name="scopes" value="{{ s }}" {% if s == "ingest" %}checked{% endif %}>{{ s }}</label>{% endfor %}</div>
-      <button type="submit">{{ icon("plus") }}Create key</button>
-    </form>
-  </div>
-  <div class="table-wrap">
-    <table class="data compact">
-      <thead><tr><th>Name</th><th>Key</th><th>Scopes</th><th>Last used</th><th></th></tr></thead>
-      <tbody>
-      {% for k in keys %}
-        <tr><td>{{ k.name }}</td><td><span class="chip">{{ k.prefix }}…</span></td><td><div class="row">{% for s in k.scopes %}<span class="chip">{{ s }}</span>{% endfor %}</div></td>
-        <td class="time">{{ k.last_used_at|ago if k.last_used_at else "never" }}</td>
-        <td>{% if k.revoked_at %}<span class="pill denied">revoked</span>{% else %}<form method="post" action="/settings/keys/{{ k.id }}/revoke" class="inline"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}"><button class="ghost" type="submit">Revoke</button></form>{% endif %}</td></tr>
-      {% else %}
-        <tr><td colspan="5"><div class="empty"><div class="ring">{{ icon("key") }}</div><strong>No API keys</strong>Create one to connect your first agent.</div></td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
-<br>
-{% endif %}
+{% set scope_names = {"ingest": "Connect an agent", "read": "Read activity", "approve": "Answer requests", "gateway": "Run a gateway", "admin": "Full control"} %}
 
 <div class="grid two">
   {% if members %}
   <section class="card">
-    <div class="card-head"><h2>Team</h2><span class="sub">{{ members|length }} member{{ "s" if members|length != 1 }}</span></div>
-    <div class="table-wrap"><table class="data compact"><tbody>
-      {% for m, u in members %}<tr><td><div class="row"><span class="avatar">{{ u.email[:1] }}</span><div><div>{{ u.name or u.email }}</div><div class="sub-line">{{ u.email }}</div></div></div></td><td><span class="chip">{{ m.role }}</span></td></tr>{% endfor %}
-    </tbody></table></div>
-    <div class="card-body muted small">Invite people and change roles with <code>POST /api/v1/members</code>.</div>
+    <div class="card-head"><div><h2>{{ icon("users") }} Team</h2><span class="sub">{{ members|length }} {{ "person" if members|length == 1 else "people" }}</span></div></div>
+    <div class="people">
+      {% for m, u in members %}<div class="person"><span class="avatar">{{ u.email[:1] }}</span><div><div>{{ u.name or u.email }}</div><div class="sub-line">{{ u.email }}</div></div>
+        <span class="chip">{{ {"admin": "Admin", "analyst": "Can answer requests", "viewer": "Can view"}.get(m.role, m.role) }}</span></div>{% endfor %}
+    </div>
+    <form method="post" action="/settings/members" class="card-body stack add-person">
+      <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+      <h3>Add a teammate</h3>
+      <div class="grid two tight">
+        <label>Email <input type="email" name="email" required maxlength="320" placeholder="sam@company.com"></label>
+        <label>Name <input type="text" name="name" maxlength="200" placeholder="Sam"></label>
+        <label>What can they do?
+          <select name="role">
+            <option value="viewer">View activity</option>
+            <option value="analyst" selected>View and answer requests</option>
+            <option value="admin">Everything (admin)</option>
+          </select></label>
+        <label>Temporary password <input type="text" name="password" required minlength="12" maxlength="1024" autocomplete="off" placeholder="at least 12 characters"></label>
+      </div>
+      <div><button type="submit">{{ icon("plus") }}Add teammate</button></div>
+    </form>
   </section>
   {% endif %}
-  {% if verification %}
+
+  {% if p.can("keys:manage") %}
   <section class="card">
-    <div class="card-head"><h2>Audit log</h2><span class="pill {{ 'active' if verification.valid else 'denied' }}">{{ "intact" if verification.valid else "tampered" }}</span></div>
-    <div class="card-body stack">
-      <p>{{ verification.entries }} entries · chain {{ "verified" if verification.valid else "BROKEN at entry " ~ verification.broken_at ~ " (" ~ verification.reason ~ ")" }}</p>
-      <p class="muted small">Each entry is hash-chained to the previous one, so edits and deletions are detectable.</p>
-      <div><a class="button secondary" href="/api/v1/audit/export">Export JSON</a></div>
+    <div class="card-head"><div><h2>{{ icon("key") }} Agent keys</h2><span class="sub">Like a password for your agent. Make one per agent so you can turn it off later.</span></div></div>
+    <form method="post" action="/settings/keys" class="card-body stack">
+      <input type="hidden" name="csrf_token" value="{{ p.csrf_token }}">
+      <label>Name <input type="text" name="name" required maxlength="200" placeholder="e.g. Support bot"></label>
+      <details class="what"><summary>What can this key do? <span class="muted small">(default: connect an agent)</span></summary>
+        <div class="row">{% for s in ["ingest", "read", "approve", "gateway", "admin"] %}<label class="check"><input type="checkbox" name="scopes" value="{{ s }}" {% if s == "ingest" %}checked{% endif %}>{{ scope_names[s] }}</label>{% endfor %}</div>
+      </details>
+      <div><button type="submit">{{ icon("plus") }}Create key</button></div>
+    </form>
+    <div class="people">
+      {% for k in keys %}
+      <div class="person">{{ tile("key", "neutral") }}<div><div>{{ k.name }}</div><div class="sub-line">{{ k.prefix }}… · {% if k.last_used_at %}last used {{ k.last_used_at|ago }}{% else %}never used{% endif %}</div></div>
+        {% if k.revoked_at %}<span class="pill denied">turned off</span>{% else %}<form method="post" action="/settings/keys/{{ k.id }}/revoke" class="inline"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}"><button class="ghost" type="submit">Turn off</button></form>{% endif %}</div>
+      {% else %}
+      <div class="empty"><div class="ring">{{ icon("key") }}</div><strong>No keys yet</strong>Create one to connect your first agent.</div>
+      {% endfor %}
     </div>
   </section>
   {% endif %}
 </div>
+
+{% if verification %}
+<br>
+<section class="card">
+  <div class="card-head"><div><h2>{{ icon("lock") }} History log</h2><span class="sub">Every decision and change is recorded and sealed, so nobody can quietly edit the past</span></div>
+    <span class="pill {{ 'active' if verification.valid else 'denied' }}">{{ "Untouched" if verification.valid else "Tampered" }}</span></div>
+  <div class="card-body row">
+    <p>{{ verification.entries }} entries{% if not verification.valid %} · broken at entry {{ verification.broken_at }} ({{ verification.reason }}){% endif %}</p>
+    <a class="button secondary" href="/api/v1/audit/export">Download</a>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

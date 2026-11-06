@@ -72,7 +72,7 @@ async def landing(request: Request, db: AsyncSession = Depends(get_db)) -> Respo
     if request.cookies.get(SESSION_COOKIE):
         p = await resolve_principal(request, db)
         if p is not None and p.kind == "user":
-            return RedirectResponse("/events", status_code=303)
+            return RedirectResponse("/home", status_code=303)
     return render(request, "landing.html", None, signup=request.app.state.settings.allow_signup)
 
 
@@ -370,4 +370,4 @@ async def welcome_sample(
     if org is not None:
         await seed_org(db, org, request.app.state.settings)
         await audit.append(db, p.org_id, p.actor, "org.sample_data_loaded", org.id, {})
-    return RedirectResponse("/events", status_code=303)
+    return RedirectResponse("/home", status_code=303)
