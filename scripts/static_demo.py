@@ -4,7 +4,7 @@
 
 Boots the real control plane in-process on a temporary SQLite database, loads the demo sessions
 (`agentguard.server.demo`), signs in, and saves every page as flat HTML. Links are rewritten to the
-saved files; live polling and actions are disabled, and a banner says it is a snapshot.
+saved files; live polling and actions are disabled, and the top bar says it is a read-only preview.
 """
 
 from __future__ import annotations
@@ -25,10 +25,6 @@ from agentguard.server.demo import seed
 from agentguard.server.settings import ServerSettings
 
 EMAIL, PASSWORD = "demo@agentguard.dev", "static-demo-password"
-BANNER = (
-    '<div class="preview-banner">Static preview of the AgentGuard dashboard with demo data. Actions are '
-    'disabled. <a href="https://github.com/Alexm2025/agentguard#control-plane">Run it yourself</a> for the live version.</div>'
-)
 
 
 def page_name(path: str) -> str:
@@ -59,12 +55,7 @@ def rewrite(html: str) -> str:
     html = re.sub(r'href="(/[^"]*)"', link, html)
     html = re.sub(r"<(button|input)(?![^>]*type=\"hidden\")", r"<\1 disabled", html)
     html = re.sub(r'<form([^>]*)action="[^"]*"', r"<form\1", html)
-    return _inject_banner(html)
-
-
-def _inject_banner(html: str) -> str:
-    m = re.search(r"<body[^>]*>", html)
-    return html[: m.end()] + BANNER + html[m.end() :] if m else html
+    return html.replace('<span class="txt">Protection on</span>', '<span class="txt">Read-only preview</span>')
 
 
 async def main(out: Path) -> None:
