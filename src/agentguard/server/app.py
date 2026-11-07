@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -105,6 +107,24 @@ async def bootstrap(db: Database, settings: ServerSettings) -> None:
         log.info("bootstrapped organisation %s with admin %s", org.slug, user.email)
 
 
+PRUNE_INTERVAL_SECONDS = 6 * 3600
+
+
+async def _prune_forever(db: Database, retention_days: int) -> None:
+    """Delete events older than the retention period now and every few hours (what the privacy page promises)."""
+    from agentguard.server.services import prune_events
+
+    while True:
+        try:
+            async with db.sessionmaker() as s:
+                n = await prune_events(s, retention_days)
+            if n:
+                log.info("pruned %d events older than %d days", n, retention_days)
+        except Exception:
+            log.exception("event pruning failed")
+        await asyncio.sleep(PRUNE_INTERVAL_SECONDS)
+
+
 def create_app(
     settings: ServerSettings | None = None,
     *,
@@ -128,8 +148,14 @@ def create_app(
         if auto_schema:
             await db.create_all()
         await bootstrap(db, settings)
-        yield
-        await db.dispose()
+        pruner = asyncio.create_task(_prune_forever(db, settings.event_retention_days))
+        try:
+            yield
+        finally:
+            pruner.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await pruner
+            await db.dispose()
 
     app = FastAPI(
         title="AgentGuard control plane",

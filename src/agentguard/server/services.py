@@ -24,6 +24,7 @@ from agentguard.server.models import (
     Organization,
     Policy,
     PolicyVersion,
+    WebSession,
     utcnow,
 )
 from agentguard.server.security import hmac_signature, sign
@@ -351,5 +352,7 @@ async def metrics_summary(db: AsyncSession, org_id: str, hours: int = 24) -> dic
 async def prune_events(db: AsyncSession, older_than_days: int) -> int:
     cutoff = utcnow() - timedelta(days=older_than_days)
     res = await db.execute(delete(Event).where(Event.received_at < cutoff))
+    # Expired sign-in sessions (and the IP / browser recorded with them) are not kept either.
+    await db.execute(delete(WebSession).where(WebSession.expires_at < utcnow()))
     await db.commit()
     return int(res.rowcount or 0)  # type: ignore[attr-defined]
