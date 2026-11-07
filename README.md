@@ -32,6 +32,8 @@ send_email.to derived from read_web(url=https://trails.example/rmnp)   →   BLO
 The console explains everything in plain words: "Stopped your agent from trying to send an email - that
 address came from a web page, not from you." Risky actions wait on a **Needs your OK** screen with two big
 buttons, and protections are simple on/off switches (the YAML editor is still there under *Advanced*).
+New users get a built-in **Guide** (`/guide`) explaining what AgentGuard does, how to connect an agent and
+how to answer requests.
 
 | Home | Needs your OK | Protection rules |
 |---|---|---|

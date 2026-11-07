@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Guide page for new users (`/guide`, public and in the console): what AgentGuard does, getting
+  started, each screen, answering requests and common questions.
 - Plain-language console: a Home screen with a one-line status, an activity feed that describes every
   decision in everyday words with clear icons, and a step-by-step story for each stopped action.
 - **Needs your OK** screen with large Allow / Don't allow buttons.

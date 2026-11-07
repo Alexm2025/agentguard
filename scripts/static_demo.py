@@ -80,7 +80,7 @@ async def main(out: Path) -> None:
         token = re.search(r'name="csrf_token" value="([^"]+)"', login.text).group(1)  # type: ignore[union-attr]
         r = await c.post("/login", data={"email": EMAIL, "password": PASSWORD, "csrf_token": token})
         assert r.status_code == 303, r.text
-        todo = ["/home", "/events", "/approvals", "/rules", "/welcome", "/policies", "/metrics", "/settings"]
+        todo = ["/home", "/guide", "/events", "/approvals", "/rules", "/welcome", "/policies", "/metrics", "/settings"]
         todo += [f"/events?action={a}" for a in ("BLOCK", "REQUIRE_APPROVAL", "REDACT", "ALLOW")]
         seen: set[str] = set()
         while todo:
