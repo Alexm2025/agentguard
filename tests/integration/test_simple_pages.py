@@ -138,3 +138,15 @@ async def test_admin_adds_teammate_who_can_sign_in(stack: Stack) -> None:
     token = re.search(r'name="csrf_token" value="([^"]+)"', (await s.get("/login")).text).group(1)  # type: ignore[union-attr]
     r = await s.post("/login", data={"email": "sam@acme.test", "password": "temporary-password-1", "csrf_token": token})
     assert r.status_code == 303 and r.headers["location"] == "/home"
+
+
+async def test_guide_is_public_and_inside_the_console(stack: Stack) -> None:
+    import httpx
+
+    anon = httpx.AsyncClient(transport=httpx.ASGITransport(app=stack.app), base_url="http://cp.test")
+    r = await anon.get("/guide")
+    assert r.status_code == 200 and "What AgentGuard is" in r.text and 'class="sidebar"' not in r.text
+    c, _ = await ui_login(stack)
+    r = await c.get("/guide")
+    assert r.status_code == 200 and "What AgentGuard is" in r.text and 'class="sidebar"' in r.text
+    assert 'href="/guide"' in (await c.get("/home")).text

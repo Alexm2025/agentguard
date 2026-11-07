@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from agentguard.core.policy.loader import default_policy_text
 from agentguard.server import audit, services
-from agentguard.server.auth import Principal, get_db
+from agentguard.server.auth import SESSION_COOKIE, Principal, get_db
 from agentguard.server.dashboard.views import need, render, ui_principal
 from agentguard.server.models import ApiKey, Approval, Event, Membership, Policy, User
 from agentguard.server.security import hash_password
@@ -117,6 +117,21 @@ async def home(request: Request, p: Principal = Depends(ui_principal), db: Async
         first_name=first_name,
         has_policy=await services.active_policy(db, p.org_id, None) is not None,
     )
+
+
+# ---------------------------------------------------------------- guide
+
+
+@router.get("/guide")
+async def guide(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+    """Plain-language introduction; works signed in (inside the console) or signed out."""
+    p: Principal | None = None
+    if request.cookies.get(SESSION_COOKIE):
+        try:
+            p = await ui_principal(request, db)
+        except HTTPException:
+            p = None
+    return render(request, "guide.html", p, signup=request.app.state.settings.allow_signup)
 
 
 # ---------------------------------------------------------------- rules
