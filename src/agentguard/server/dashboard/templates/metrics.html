@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon, action_pill %}
-{% block title %}Metrics{% endblock %}
+{% block title %}Reports{% endblock %}
 {% block content %}
 <div class="page-head">
   <div><h1>Metrics</h1><p>How AgentGuard protected your agents over the last {{ "24 hours" if hours == 24 else hours ~ " hours" if hours < 168 else (hours // 24) ~ " days" }}.</p></div>

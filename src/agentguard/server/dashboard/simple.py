@@ -115,6 +115,7 @@ async def home(request: Request, p: Principal = Depends(ui_principal), db: Async
         has_key=has_key,
         recent=recent,
         first_name=first_name,
+        has_policy=await services.active_policy(db, p.org_id, None) is not None,
     )
 
 

@@ -2,68 +2,100 @@
 {% from "_icons.html" import icon, tile %}
 {% block title %}Home{% endblock %}
 {% block content %}
-<div class="hello">
-  <h1>Hi {{ first_name|capitalize }} 👋</h1>
-  <p>Here's what your AI agents have been up to.</p>
-</div>
-
-{% if pending %}
-<a class="shero warn" href="/approvals">
-  {{ tile("hand", "warn", "xl") }}
-  <span class="shero-text"><strong>{{ pending }} action{{ "s" if pending != 1 }} waiting for your OK</strong>
-  <span>Your agent paused because something looked risky. Take a look and decide.</span></span>
-  <span class="button">Review now {{ icon("arrow") }}</span>
-</a>
-{% elif total == 0 %}
-<div class="shero brand">
-  {{ tile("plug", "brand", "xl") }}
-  <span class="shero-text"><strong>Let's protect your first agent</strong>
-  <span>It takes about two minutes. Or load some example activity to see how AgentGuard works.</span></span>
-  <span class="shero-actions">
-    <a class="button" href="/welcome">Connect an agent {{ icon("arrow") }}</a>
-    {% if p.can("policies:write") %}
-    <form method="post" action="/welcome/sample" class="inline"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}"><button type="submit" class="secondary">Show me an example</button></form>
-    {% endif %}
-  </span>
-</div>
-{% elif m.attacks_blocked %}
-<div class="shero danger">
-  {{ tile("shield", "danger", "xl") }}
-  <span class="shero-text"><strong>AgentGuard stopped {{ m.attacks_blocked }} risky action{{ "s" if m.attacks_blocked != 1 }} today</strong>
-  <span>Nothing harmful was sent or changed. Nothing needs your attention right now.</span></span>
-  <a class="button secondary" href="/events?action=BLOCK">See what was stopped</a>
-</div>
-{% else %}
-<div class="shero ok">
-  {{ tile("check", "ok", "xl") }}
-  <span class="shero-text"><strong>All good - your agents are protected</strong>
-  <span>Nothing risky happened in the last 24 hours.</span></span>
-</div>
-{% endif %}
-
-<div class="simple-stats">
-  <a class="sstat" href="/events">{{ tile("activity", "info") }}<span><b>{{ m.tool_calls }}</b>actions checked today</span></a>
-  <a class="sstat" href="/events?action=BLOCK">{{ tile("shield", "danger") }}<span><b>{{ m.attacks_blocked }}</b>stopped</span></a>
-  <a class="sstat" href="/approvals">{{ tile("hand", "warn") }}<span><b>{{ pending }}</b>waiting for you</span></a>
-  <a class="sstat" href="/events">{{ tile("eye-off", "info") }}<span><b>{{ m.tool_results_flagged }}</b>suspicious things hidden</span></a>
-</div>
-
-<div class="grid side">
-  <section class="card">
-    <div class="card-head"><h2>Latest activity</h2><a href="/events">See all {{ icon("arrow") }}</a></div>
-    <div class="feed">
-      {% for e in recent %}{% include "_feed_item.html" %}
-      {% else %}<div class="empty"><div class="ring">{{ icon("smile") }}</div><strong>Quiet so far</strong>Activity from your agents will appear here.</div>{% endfor %}
+{% set acts = m.actions or {} %}
+<section class="overview">
+  <div class="overview-head">
+    <div>
+      <h1>Hi {{ first_name|capitalize }}, here's your overview</h1>
+      <p class="lead">What your AI agents did in the last 24 hours, and what AgentGuard did about it.</p>
     </div>
-  </section>
-  <section class="card how">
-    <div class="card-head"><h2>How AgentGuard keeps you safe</h2></div>
-    <ol class="steps-simple">
-      <li>{{ tile("eye", "info") }}<span><b>Your agent reads things</b> - websites, emails, files. Some of them may try to trick it.</span></li>
-      <li>{{ tile("shield", "brand") }}<span><b>AgentGuard checks every action</b> before it happens, and remembers where each detail came from.</span></li>
-      <li>{{ tile("hand", "warn") }}<span><b>Risky actions are stopped</b> or wait for your OK. Safe ones go through instantly.</span></li>
-    </ol>
-    <div class="card-body"><a class="button secondary" href="/rules">{{ icon("sliders") }}Change what's protected</a></div>
-  </section>
-</div>
+    <div class="row">
+      <a class="button secondary" href="/events">{{ icon("activity") }}All activity</a>
+      <a class="button" href="/welcome">{{ icon("plug") }}Connect an agent</a>
+    </div>
+  </div>
+
+  {% if pending %}
+  <a class="shero warn" href="/approvals">
+    {{ tile("hand", "warn", "xl") }}
+    <span class="shero-text"><strong>{{ pending }} action{{ "s" if pending != 1 }} waiting for your OK</strong>
+    <span>Your agent paused because something looked risky. Take a look and decide.</span></span>
+    <span class="button">Review now {{ icon("arrow") }}</span>
+  </a>
+  {% elif total == 0 %}
+  <div class="shero brand">
+    {{ tile("plug", "brand", "xl") }}
+    <span class="shero-text"><strong>Let's protect your first agent</strong>
+    <span>It takes about two minutes. Or load some example activity to see how AgentGuard works.</span></span>
+    <span class="shero-actions">
+      <a class="button" href="/welcome">Connect an agent {{ icon("arrow") }}</a>
+      {% if p.can("policies:write") %}
+      <form method="post" action="/welcome/sample" class="inline"><input type="hidden" name="csrf_token" value="{{ p.csrf_token }}"><button type="submit" class="secondary">Show me an example</button></form>
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  <div class="metrics">
+    <article class="metric">
+      <div class="metric-label"><span class="metric-ico">{{ icon("activity") }}</span>Actions checked</div>
+      <div class="metric-value">{{ m.tool_calls }}</div>
+      <div class="metric-foot"><span class="chip-soft ok">{{ icon("zap") }}{% if m.latency_ms.p50 is not none %}{{ "%.0f"|format(m.latency_ms.p50) }} ms{% else %}instant{% endif %}</span> typical check time</div>
+    </article>
+    <a class="metric" href="/events?action=BLOCK">
+      <div class="metric-label"><span class="metric-ico">{{ icon("shield") }}</span>Risky actions stopped</div>
+      <div class="metric-value">{{ m.attacks_blocked }}</div>
+      <div class="metric-foot">{% if m.attacks_blocked %}<span class="chip-soft danger">{{ icon("ban") }}nothing was sent</span>{% else %}none today{% endif %}</div>
+    </a>
+    <a class="metric" href="/approvals">
+      <div class="metric-label"><span class="metric-ico">{{ icon("hand") }}</span>Waiting for you</div>
+      <div class="metric-value">{{ pending }}</div>
+      <div class="metric-foot">{% if pending %}<span class="chip-soft warn">{{ icon("clock") }}needs a decision</span>{% else %}you're all caught up{% endif %}</div>
+    </a>
+    <a class="metric" href="/events?action=REDACT">
+      <div class="metric-label"><span class="metric-ico">{{ icon("eye-off") }}</span>Suspicious content hidden</div>
+      <div class="metric-value">{{ m.tool_results_flagged }}</div>
+      <div class="metric-foot">kept away from your agent</div>
+    </a>
+  </div>
+</section>
+
+<section class="flow-section">
+  <div class="board-head"><h2>How your agents are protected right now</h2><a href="/rules">{{ icon("sliders") }}Change protection</a></div>
+  <div class="flow-board">
+    <div class="flow-badges">
+      <span class="flow-pill is-live"><span class="ping"></span>Live</span>
+      <span class="flow-pill">Rules: {{ "your custom rules" if has_policy else "recommended defaults" }}</span>
+    </div>
+    <div class="flow" role="img" aria-label="Your agent's actions go through AgentGuard: {{ acts.get('ALLOW', 0) }} allowed, {{ acts.get('REQUIRE_APPROVAL', 0) }} asked you, {{ m.attacks_blocked }} stopped in the last 24 hours">
+      <div class="flow-node">
+        <span class="flow-ico">{{ icon("globe") }}</span>
+        <b>Your agent reads</b><small>web pages, emails, files</small>
+      </div>
+      <div class="flow-link"></div>
+      <div class="flow-node">
+        <span class="flow-ico">{{ icon("tool") }}</span>
+        <b>…and wants to act</b><small>send, pay, delete, post</small>
+      </div>
+      <div class="flow-link"></div>
+      <div class="flow-node core">
+        <span class="flow-ico">{{ icon("shield") }}</span>
+        <b>AgentGuard checks</b><small>where every detail came from</small>
+      </div>
+      <div class="flow-fork">
+        <a class="flow-out ok" href="/events?action=ALLOW">{{ icon("check") }}<span><b>{{ acts.get("ALLOW", 0) }}</b> allowed</span></a>
+        <a class="flow-out warn" href="/approvals">{{ icon("hand") }}<span><b>{{ acts.get("REQUIRE_APPROVAL", 0) }}</b> asked you</span></a>
+        <a class="flow-out danger" href="/events?action=BLOCK">{{ icon("ban") }}<span><b>{{ m.attacks_blocked }}</b> stopped</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Latest activity</h2><a href="/events">See all {{ icon("arrow") }}</a></div>
+  <div class="feed">
+    {% for e in recent %}{% include "_feed_item.html" %}
+    {% else %}<div class="empty"><div class="ring">{{ icon("smile") }}</div><strong>Quiet so far</strong>Activity from your agents will appear here.</div>{% endfor %}
+  </div>
+</section>
 {% endblock %}

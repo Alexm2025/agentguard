@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon, tile %}
-{% block title %}Events{% endblock %}
+{% block title %}Activity{% endblock %}
 {% block content %}
 <div class="page-head">
   <div>
@@ -10,12 +10,25 @@
   <span class="live">Live</span>
 </div>
 
-<div class="simple-stats">
-  <div class="sstat">{{ tile("activity", "info") }}<span><b>{{ m.tool_calls }}</b>actions checked today</span></div>
-  <div class="sstat">{{ tile("shield", "danger") }}<span><b>{{ m.attacks_blocked }}</b>stopped</span></div>
-  <a class="sstat" href="/approvals">{{ tile("hand", "warn") }}<span><b>{{ pending }}</b>waiting for you</span></a>
-  <div class="sstat">{{ tile("zap", "ok") }}<span><b>{% if m.latency_ms.p95 is not none %}{{ "%.0f"|format(m.latency_ms.p95) }} ms{% else %}–{% endif %}</b>time to check an action</span></div>
+<div class="metrics">
+  <article class="metric">
+    <div class="metric-label"><span class="metric-ico">{{ icon("activity") }}</span>Actions checked today</div>
+    <div class="metric-value">{{ m.tool_calls }}</div>
+  </article>
+  <a class="metric" href="/events?action=BLOCK">
+    <div class="metric-label"><span class="metric-ico">{{ icon("shield") }}</span>Stopped</div>
+    <div class="metric-value">{{ m.attacks_blocked }}</div>
+  </a>
+  <a class="metric" href="/approvals">
+    <div class="metric-label"><span class="metric-ico">{{ icon("hand") }}</span>Waiting for you</div>
+    <div class="metric-value">{{ pending }}</div>
+  </a>
+  <article class="metric">
+    <div class="metric-label"><span class="metric-ico">{{ icon("zap") }}</span>Time to check an action</div>
+    <div class="metric-value">{% if m.latency_ms.p95 is not none %}{{ "%.0f"|format(m.latency_ms.p95) }}<small> ms</small>{% else %}–{% endif %}</div>
+  </article>
 </div>
+<br>
 
 <section class="card">
   <div class="card-head">
