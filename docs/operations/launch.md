@@ -29,11 +29,27 @@ Amazon SES or Mailgun). Verify your sending domain with the provider, then note:
 - `AGENTGUARD_SMTP_URL`: `smtp://USER:PASSWORD@HOST:587` (STARTTLS) or `smtps://USER:PASSWORD@HOST:465`
 - `AGENTGUARD_MAIL_FROM`: for example `AgentGuard <no-reply@yourdomain.com>`
 
+!!! warning "On Render's free plan, use port 2525"
+    Render's free web services block outbound email on ports 25, 465 and 587. Most providers also accept
+    port **2525** (Brevo, Mailgun, SendGrid, Postmark; Resend uses 2587 or `smtps` on 2465), for example
+    `smtp://USER:PASSWORD@smtp-relay.brevo.com:2525`. If the confirmation email can't be sent, sign-up shows an
+    error and saves nothing, so people can retry once email works.
+
+You can also launch without email: sign-up then works without a confirmation step, and password reset is
+unavailable until you add it.
+
 ## 3. Deploy on Render
 
 1. Open **https://render.com/deploy?repo=https://github.com/Alexm2025/agentguard** and sign in.
-2. Choose plans. **Free plans are for trying it out only**: the web service sleeps when idle and the free database
-   is deleted after 30 days. For real users pick a paid web service and a paid database.
+2. Choose plans. Free plans are fine to start, with these limits:
+
+    - The web service **sleeps after 15 minutes without visitors**; the next visit takes about a minute to wake it.
+      Agents that call it during that minute wait or, with the default fail-closed setting, have risky actions
+      stopped.
+    - The free database **expires 30 days after it is created** (Render emails you before). Upgrade it before then
+      or everyone's accounts and activity are lost.
+    - 512 MB of memory: enough (AgentGuard with the classifier uses about 160 MB).
+    - Outbound email ports are blocked (see step 2).
 3. Fill in the values Render asks for:
 
     | Setting | Value |

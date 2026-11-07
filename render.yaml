@@ -38,6 +38,7 @@ services:
       - key: AGENTGUARD_CONTACT_EMAIL
         sync: false
       # Optional but recommended for a public service: email verification and password reset.
+      # On the free plan Render blocks ports 25/465/587: use your provider's port 2525, e.g. smtp://user:pass@host:2525
       - key: AGENTGUARD_SMTP_URL
         sync: false
       - key: AGENTGUARD_MAIL_FROM
