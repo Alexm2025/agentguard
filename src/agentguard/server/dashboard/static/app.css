@@ -688,3 +688,106 @@ a.metric:hover { text-decoration: none; border-color: var(--line-2); background:
 @media (max-width: 880px) { .shell { background: var(--bg); } }
 .metric-value small { font-size: 15px; font-weight: 550; color: var(--text-3); }
 .page-head + .metrics { margin-bottom: 0; }
+
+/* ================================================================== v5: neutral, no purple, no gradients or glows */
+:root {
+  --brand: #18181b; --brand-1: #18181b; --brand-2: #18181b; --brand-soft: rgba(24, 24, 27, .06);
+  --violet: #52525b; --violet-soft: #f4f4f5;
+  --blue: #3f3f46; --blue-soft: #f4f4f5;
+  --red: #dc2626; --red-soft: #fef2f2; --amber: #b45309; --amber-soft: #fffbeb; --green: #15803d; --green-soft: #f0fdf4;
+  --focus: rgba(24, 24, 27, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #fafafa; --brand-1: #fafafa; --brand-2: #fafafa; --brand-soft: rgba(255, 255, 255, .08);
+    --violet: #a1a1aa; --violet-soft: rgba(255, 255, 255, .06);
+    --blue: #d4d4d8; --blue-soft: rgba(255, 255, 255, .06);
+    --red: #f87171; --red-soft: rgba(248, 113, 113, .1); --amber: #fbbf24; --amber-soft: rgba(251, 191, 36, .1);
+    --green: #4ade80; --green-soft: rgba(74, 222, 128, .1);
+    --focus: rgba(255, 255, 255, .22);
+  }
+}
+::selection { background: var(--focus); }
+a { color: var(--text); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+.nav a, .brand, .button, .feed-item, .metric, .sstat, .shero, .flow-out, .icon-btn, .crumb, .who, a.tool, .rowlink, .tabs a,
+.card-head a, .board-head a, .topnav a, .feature a, footer a { text-decoration: none; }
+
+/* logo and avatars: solid, no gradients */
+.mark { background: var(--text); box-shadow: none; }
+.mark svg { stroke: var(--bg); }
+.org .dot, .avatar { background: var(--surface-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+.nav a[aria-current="page"] svg { color: var(--text); }
+.nav a[aria-current="page"] .count { background: var(--text); color: var(--bg); }
+.side-help { background: transparent; }
+.side-help svg { color: var(--text-3); }
+.eyebrow { color: var(--text-3); }
+
+/* buttons: solid primary, outlined secondary, no glow */
+button, .button { background: var(--text); color: var(--bg); box-shadow: none; border: 1px solid var(--text); filter: none; }
+button:hover, .button:hover { filter: none; opacity: .88; }
+button.secondary, .button.secondary { background: var(--surface); color: var(--text); border-color: var(--line-2); }
+button.secondary:hover, .button.secondary:hover { background: var(--surface-2); opacity: 1; }
+button.ghost, .button.ghost { background: transparent; color: var(--text-2); border-color: transparent; }
+button.ghost:hover, .button.ghost:hover { background: var(--gray-soft); color: var(--text); opacity: 1; }
+button.approve { background: var(--text); color: var(--bg); border-color: var(--text); box-shadow: none; }
+button.danger { background: var(--surface); color: var(--red); border-color: var(--line-2); box-shadow: none; }
+button.danger:hover { background: var(--red-soft); opacity: 1; }
+button:focus-visible, .button:focus-visible, a:focus-visible, input.switch:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+input:focus, select:focus, textarea:focus { border-color: var(--text-3); box-shadow: 0 0 0 3px var(--focus); }
+.check input, .choice input { accent-color: var(--text); }
+
+/* surfaces */
+.shero, .shero.warn, .shero.danger, .shero.ok, .shero.brand { background: var(--surface); border-color: var(--line); }
+.shero.warn { border-left: 3px solid var(--amber); }
+.notice.info { background: var(--surface-2); border-color: var(--line); }
+pre.key { border-color: var(--line-2); }
+.approval::before { background: var(--amber); }
+.stat::after { display: none; }
+.public::before, .main::before { display: none; }
+.showcase { background: var(--surface-2); box-shadow: none; }
+.grad { background: none; color: var(--text); -webkit-background-clip: border-box; background-clip: border-box; }
+.feature .ico { background: var(--gray-soft); color: var(--text); }
+.preview-banner { display: none; }
+
+/* icon tiles: monochrome; colour only lives in status labels */
+.tile, .tile.danger, .tile.warn, .tile.ok, .tile.info, .tile.brand, .tile.neutral { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--line); }
+.stat .ico, .stat.red .ico, .stat.amber .ico, .stat.green .ico, .stat.violet .ico, .stat.blue .ico { background: var(--surface-2); color: var(--text-2); }
+.story li:last-child .tile { color: var(--text); }
+
+/* status labels: quiet tint + coloured text */
+.tag, .pill { box-shadow: none; }
+.pill.redact, .tag.info { background: var(--gray-soft); color: var(--text-2); }
+.pill.allow, .pill.active, .pill.approved { background: var(--green-soft); color: var(--green); box-shadow: none; }
+.pill.block, .pill.denied { box-shadow: none; } .pill.require_approval, .pill.pending { box-shadow: none; }
+.risk.medium { color: var(--text-2); }
+.timeline .dot.redact { background: var(--text-3); }
+.chip-soft.ok { background: var(--gray-soft); color: var(--text-2); }
+
+/* attack path: neutral nodes, red only on the decision */
+.node.src, .node.arg, .node.sink { background: var(--surface-2); border-color: var(--line); }
+.node.src .k, .node.arg .k, .node.sink .k { color: var(--text-3); }
+.node.verdict.block, .node.verdict.require_approval, .node.verdict.allow { background: var(--surface); }
+meter::-webkit-meter-even-less-good-value, meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-optimum-value { background: var(--text-2); }
+meter.bar::-webkit-meter-optimum-value { background: var(--text-2); }
+
+/* chart: greys plus red for stopped */
+.chart .bar-allow { fill: var(--text-3); opacity: .35; } .chart .bar-approval { fill: var(--amber); opacity: .8; }
+.legend .allow { background: var(--text-3); opacity: .5; }
+
+/* rules page */
+input.switch:checked { background: var(--text); }
+input.switch:checked::after { background: var(--bg); }
+.choice:has(input:checked) { border-color: var(--text); background: var(--surface-2); }
+
+/* home board */
+.flow-board { background-color: var(--surface-2); }
+.flow-node.core { border-color: var(--text); box-shadow: none; }
+.flow-node.core .flow-ico { background: var(--text); color: var(--bg); }
+.flow-pill, .flow-pill.is-live { color: var(--text-2); }
+.flow-out.warn svg { color: var(--amber); }
+.live-chip { color: var(--text-2); }
+.live, .live-chip { background: transparent; }
+.live { color: var(--text-2); border: 1px solid var(--line); }
+details.tech > summary::after { color: var(--text-2); }
+button.copied { color: var(--green); }
