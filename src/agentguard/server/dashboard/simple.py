@@ -125,13 +125,46 @@ async def home(request: Request, p: Principal = Depends(ui_principal), db: Async
 @router.get("/guide")
 async def guide(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
     """Plain-language introduction; works signed in (inside the console) or signed out."""
-    p: Principal | None = None
-    if request.cookies.get(SESSION_COOKIE):
-        try:
-            p = await ui_principal(request, db)
-        except HTTPException:
-            p = None
+    p = await _optional_principal(request, db)
     return render(request, "guide.html", p, signup=request.app.state.settings.allow_signup)
+
+
+LEGAL_UPDATED = "7 November 2026"
+
+
+async def _optional_principal(request: Request, db: AsyncSession) -> Principal | None:
+    if not request.cookies.get(SESSION_COOKIE):
+        return None
+    try:
+        return await ui_principal(request, db)
+    except HTTPException:
+        return None
+
+
+@router.get("/terms")
+async def terms(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+    return _legal(request, await _optional_principal(request, db), "terms")
+
+
+@router.get("/privacy")
+async def privacy(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+    return _legal(request, await _optional_principal(request, db), "privacy")
+
+
+def _legal(request: Request, p: Principal | None, doc: str) -> Response:
+    st = request.app.state.settings
+    return render(
+        request,
+        "legal.html",
+        p,
+        doc=doc,
+        updated=LEGAL_UPDATED,
+        operator_name=st.operator_name,
+        contact_email=st.contact_email,
+        retention_days=st.event_retention_days,
+        session_hours=int(st.session_ttl_hours),
+        signup=st.allow_signup,
+    )
 
 
 # ---------------------------------------------------------------- rules

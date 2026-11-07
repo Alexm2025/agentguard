@@ -150,3 +150,38 @@ async def test_guide_is_public_and_inside_the_console(stack: Stack) -> None:
     r = await c.get("/guide")
     assert r.status_code == 200 and "What AgentGuard is" in r.text and 'class="sidebar"' in r.text
     assert 'href="/guide"' in (await c.get("/home")).text
+
+
+async def test_terms_and_privacy_pages(stack: Stack) -> None:
+    import httpx
+
+    anon = httpx.AsyncClient(transport=httpx.ASGITransport(app=stack.app), base_url="http://cp.test")
+    terms = await anon.get("/terms")
+    privacy = await anon.get("/privacy")
+    assert terms.status_code == 200 and "Terms of service" in terms.text
+    assert privacy.status_code == 200 and "Privacy policy" in privacy.text
+    days = stack.app.state.settings.event_retention_days
+    assert f"{days} days" in privacy.text and "no advertising" in privacy.text
+
+
+async def test_prune_removes_old_events_and_expired_sessions(stack: Stack) -> None:
+    from datetime import timedelta
+
+    from sqlalchemy import func, select
+
+    from agentguard.server.models import Event, WebSession, utcnow
+    from agentguard.server.services import prune_events
+
+    ingest = await stack.key(["ingest"])
+    await stack.client.post("/api/v1/events", json={"events": [event("evt_old")]}, headers={"x-agentguard-key": ingest})
+    await ui_login(stack)  # creates a sign-in session
+    db = stack.app.state.database
+    async with db.sessionmaker() as s:
+        ev = await s.get(Event, "evt_old")
+        assert ev is not None
+        ev.received_at = utcnow() - timedelta(days=400)
+        for ws in (await s.execute(select(WebSession))).scalars():
+            ws.expires_at = utcnow() - timedelta(hours=1)
+        await s.commit()
+        assert await prune_events(s, 90) == 1
+        assert (await s.execute(select(func.count()).select_from(WebSession))).scalar() == 0

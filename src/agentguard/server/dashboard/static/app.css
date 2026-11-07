@@ -837,3 +837,6 @@ details.faq p { padding: 0 0 16px; font-size: 15px; }
 a.side-help { text-decoration: none; color: var(--text-2); }
 a.side-help:hover { border-color: var(--line-2); color: var(--text); }
 a.side-help b { color: var(--text); }
+.agree { margin-top: 12px; text-align: center; }
+.legal .guide-sec { padding-top: 28px; margin-top: 28px; }
+.legal .guide-sec h2 { font-size: 18px; }

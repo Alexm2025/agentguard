@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ "Terms of service" if doc == "terms" else "Privacy policy" }}{% endblock %}
+{% macro body() %}
+{% set operator = operator_name or "the operator of this AgentGuard service" %}
+{% set contact %}{% if contact_email %}<a href="mailto:{{ contact_email }}">{{ contact_email }}</a>{% else %}the contact details the operator provides{% endif %}{% endset %}
+<article class="guide legal">
+  <header class="guide-head">
+    <span class="eyebrow">Legal</span>
+    <h1>{{ "Terms of service" if doc == "terms" else "Privacy policy" }}</h1>
+    <p class="guide-lead">Last updated {{ updated }}. This service is run by <b>{{ operator }}</b>{% if contact_email %} ({{ contact }}){% endif %}.</p>
+  </header>
+
+{% if doc == "terms" %}
+  <section class="guide-sec">
+    <h2>1. The service</h2>
+    <p>AgentGuard checks the actions of AI agents you connect to it and stops or pauses the ones that look unsafe. By creating
+      an account or using the service you agree to these terms. If you use it for a company, you confirm you may accept them on
+      the company's behalf.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>2. Your account</h2>
+    <p>Keep your password and API keys secret, and turn off keys you no longer use. You are responsible for what happens under
+      your account and for the people you invite to your workspace.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>3. Acceptable use</h2>
+    <p>Don't use the service to break the law, to attack or overload it or other systems, to get around its security, or to send
+      data you have no right to process. We may suspend accounts that do.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>4. What AgentGuard does not promise</h2>
+    <p>AgentGuard reduces risk; it does not remove it. Detection is probabilistic, some attacks will get through, and some safe
+      actions will be stopped. You remain responsible for your agents, what they are allowed to do, and the decisions you make
+      when approving actions. Read the <a href="https://alexm2025.github.io/agentguard/limitations/">known limitations</a>.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>5. Your data</h2>
+    <p>You keep ownership of the data your agents send. We use it only to run the service for you, as described in the
+      <a href="/privacy">privacy policy</a>.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>6. Availability and changes</h2>
+    <p>The service is provided "as is" and "as available", without warranties of any kind. We may change, pause or stop it, and
+      may update these terms; if a change is significant we will tell account holders by email or in the app.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>7. Liability</h2>
+    <p>To the extent the law allows, {{ operator }} is not liable for indirect or consequential losses, or for losses caused by
+      actions your agents take, whether or not AgentGuard stopped them.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>8. Ending your use</h2>
+    <p>You can stop using the service at any time and ask us to delete your account and workspace by contacting {{ contact }}.
+      We may close accounts that break these terms.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>9. Open source</h2>
+    <p>AgentGuard's software is open source under the Apache 2.0 license (enterprise features under a separate license). These terms
+      cover this hosted service, not your use of the source code.</p>
+  </section>
+{% else %}
+  <section class="guide-sec">
+    <h2>What we collect</h2>
+    <p><b>Your account:</b> your name, email address, workspace name, and your password stored only as a one-way hash. We also keep
+      the teammates and API keys you create (keys are stored only as hashes).</p>
+    <p><b>What your agents send:</b> for each action, the tool name, its arguments, AgentGuard's decision, the reasons and how long the
+      check took; plus approval requests and who answered them. Passwords, API keys, card numbers and similar values that
+      AgentGuard detects are masked before they are stored. Only send data you are allowed to share with this service.</p>
+    <p><b>A history log</b> of important changes in your workspace (sign-ins, new keys, rule changes, decisions), kept so changes
+      can't be quietly edited.</p>
+    <p><b>Sign-in sessions:</b> when you sign in we record your IP address and browser type with the session, for security. Sessions
+      expire after {{ session_hours }} hours and expired sessions are deleted automatically.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>Cookies</h2>
+    <p>We use only the cookies needed to keep you signed in and to protect forms against forgery. There are no advertising,
+      analytics or tracking cookies, and no third-party scripts.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>How we use it</h2>
+    <p>Only to run the service for you: checking your agents' actions, showing you what happened, sending account emails
+      (verification and password reset) and keeping the service secure. We don't sell your data or use it for advertising.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>Who else handles it</h2>
+    <p>The hosting and database provider that runs this service, and the email provider used to send account emails. They process
+      data on our behalf. We may disclose data if the law requires it.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>How long we keep it</h2>
+    <p>Agent activity is deleted automatically after <b>{{ retention_days }} days</b>. Account and workspace data are kept until you
+      ask us to delete them. Each workspace's data is kept separate from every other workspace.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>Your choices and rights</h2>
+    <p>You can ask to see, correct, export or delete your data, or close your account, by contacting {{ contact }}. Depending on
+      where you live you may have further rights, including complaining to your data protection authority.</p>
+  </section>
+  <section class="guide-sec">
+    <h2>Changes</h2>
+    <p>If we change this policy in a significant way we will tell account holders by email or in the app.</p>
+  </section>
+{% endif %}
+</article>
+{% endmacro %}
+{% block content %}{{ body() }}{% endblock %}
+{% block bare %}<main class="guide-public">{{ body() }}</main>{% endblock %}

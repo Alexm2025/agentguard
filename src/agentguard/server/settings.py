@@ -56,6 +56,8 @@ class ServerSettings(BaseModel):
     allow_signup: bool = False
     smtp_url: str | None = None  # smtp://user:pass@host:587 (STARTTLS) or smtps://user:pass@host:465
     mail_from: str = "AgentGuard <no-reply@localhost>"
+    operator_name: str = ""  # who runs this service; shown on the Terms and Privacy pages
+    contact_email: str = ""
 
     @property
     def email_enabled(self) -> bool:
@@ -116,4 +118,6 @@ def get_settings() -> ServerSettings:
         allow_signup=(_env("AGENTGUARD_ALLOW_SIGNUP", "false") or "").lower() == "true",
         smtp_url=_env("AGENTGUARD_SMTP_URL"),
         mail_from=_env("AGENTGUARD_MAIL_FROM", "AgentGuard <no-reply@localhost>") or "",
+        operator_name=_env("AGENTGUARD_OPERATOR_NAME", "") or "",
+        contact_email=_env("AGENTGUARD_CONTACT_EMAIL", "") or "",
     )
