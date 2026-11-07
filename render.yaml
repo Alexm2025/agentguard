@@ -26,6 +26,17 @@ services:
         value: "true"
       - key: AGENTGUARD_TRUST_PROXY_HEADERS
         value: "true"
+      # ML classifier weights, downloaded and checksum-verified during the Docker build
+      # (Render passes environment variables to the build as build arguments).
+      - key: MODEL_URL
+        value: https://github.com/Alexm2025/agentguard/releases/download/model-injection-classifier-v1/injection-classifier-v1.tar.gz
+      - key: MODEL_SHA256
+        value: 2dc65b80bbf2d65ff2bac693555523fa12fb16961c77a10063549bf2397dc480
+      # Shown on the Terms and Privacy pages: who runs this service and how to reach them.
+      - key: AGENTGUARD_OPERATOR_NAME
+        sync: false
+      - key: AGENTGUARD_CONTACT_EMAIL
+        sync: false
       # Optional but recommended for a public service: email verification and password reset.
       - key: AGENTGUARD_SMTP_URL
         sync: false

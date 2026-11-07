@@ -66,6 +66,7 @@ nav:
       - REST API: reference/api.md
       - CLI: reference/cli.md
   - Operations:
+      - Launch checklist: operations/launch.md
       - Deployment: operations/deployment.md
       - Performance: operations/performance.md
   - Security:
