@@ -157,3 +157,22 @@ async def test_mailer_reports_failure_without_raising(stack: Stack) -> None:
     assert await mailer.send(stack.settings, "a@b.test", "s", "t") is False
     stack.settings.smtp_url = None
     assert await mailer.send(stack.settings, "a@b.test", "s", "t") is False
+
+
+async def test_signup_saves_nothing_when_the_confirmation_email_fails(
+    stack: Stack, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    outcome = {"ok": False}
+
+    async def flaky_send(settings, to, subject, text):  # type: ignore[no-untyped-def]
+        return outcome["ok"]
+
+    monkeypatch.setattr(mailer, "send", flaky_send)
+    stack.settings.allow_signup = True
+    stack.settings.smtp_url = "smtp://mail.test:2525"
+    c = browser(stack)
+    r = await signup(c, email="retry@startup.test")
+    assert "couldn&#39;t send your confirmation email" in r.text or "couldn't send your confirmation email" in r.text
+    outcome["ok"] = True  # the person tries again once email works: the address is still free
+    r = await signup(browser(stack), email="retry@startup.test")
+    assert "Check your email" in r.text

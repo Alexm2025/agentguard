@@ -127,25 +127,38 @@ async def signup_submit(
     db.add_all([org, user])
     await db.flush()
     db.add(Membership(org_id=org.id, user_id=user.id, role="admin"))
-    await db.commit()
-    await audit.append(db, org.id, f"user:{email}", "account.signup", user.id, {"organization": org.slug})
 
     if verify:
+        # Send before saving: if the email can't be sent, nothing is stored and the person can simply retry
+        # (otherwise they would be left with an account they can never activate).
         token = sign({"p": "verify", "u": user.id}, settings.secret_key, 2 * 24 * 3600)
         link = f"{settings.public_url.rstrip('/')}/verify?token={token}"
-        await mailer.send(
+        sent = await mailer.send(
             settings,
             email,
             "Confirm your AgentGuard account",
             f"Hi {user.name or email},\n\nConfirm your email to activate your AgentGuard account:\n\n{link}\n\n"
             "The link is valid for 48 hours. If you did not sign up, ignore this email.\n",
         )
+        if not sent:
+            await db.rollback()
+            return _public(
+                request,
+                "notice.html",
+                title="We couldn't send your confirmation email",
+                message="Nothing was saved. Please try again in a few minutes. If it keeps happening, contact the "
+                "people who run this service.",
+            )
+        await db.commit()
+        await audit.append(db, org.id, f"user:{email}", "account.signup", user.id, {"organization": org.slug})
         return _public(
             request,
             "notice.html",
             title="Check your email",
             message=f"We sent a confirmation link to {email}. Open it to activate your account.",
         )
+    await db.commit()
+    await audit.append(db, org.id, f"user:{email}", "account.signup", user.id, {"organization": org.slug})
     token, _ = await create_session(db, user, org.id, request, settings)
     resp = RedirectResponse("/welcome", status_code=303)
     set_session_cookie(resp, token, settings)
