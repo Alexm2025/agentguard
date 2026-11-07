@@ -28,8 +28,9 @@
       <a href="/welcome" {% if path.startswith('/welcome') %}aria-current="page"{% endif %}>{{ icon("plug") }}Connect an agent</a>
       <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>{{ icon("users") }}Team &amp; keys</a>
       <a href="/metrics" {% if path.startswith('/metrics') %}aria-current="page"{% endif %}>{{ icon("chart") }}Reports</a>
+      <a href="/guide" {% if path.startswith('/guide') %}aria-current="page"{% endif %}>{{ icon("info") }}Guide</a>
     </nav>
-    <div class="side-help">{{ icon("info") }}<span>AgentGuard checks every action your AI agent takes and stops the dangerous ones.</span></div>
+    <a class="side-help" href="/guide">{{ icon("info") }}<span><b>New here?</b> Read the 5-minute guide: what AgentGuard does and how to use it.</span></a>
     <div class="side-foot">
       <a class="who" href="/account" {% if path.startswith('/account') %}aria-current="page"{% endif %}>
         <span class="avatar">{{ p.display[:1] }}</span>
@@ -58,6 +59,7 @@
   <header class="topnav">
     <a class="brand" href="/">{{ mark() }}<span>AgentGuard</span></a>
     <nav>
+      <a class="link" href="/guide">How it works</a>
       <a class="link" href="https://alexm2025.github.io/agentguard/">Docs</a>
       <a class="link" href="https://github.com/Alexm2025/agentguard">GitHub</a>
       {% block topnav_actions %}
