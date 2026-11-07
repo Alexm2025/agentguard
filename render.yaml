@@ -12,11 +12,14 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /readyz
-    dockerCommand: sh -c "agentguard server migrate && agentguard server run --host 0.0.0.0 --port $PORT"
+    # No dockerCommand: the image's own start command (`agentguard server run --migrate`) applies
+    # migrations, then listens on Render's $PORT. Render does not handle quoted `sh -c` commands well.
     envVars:
       - key: AGENTGUARD_ENV
         value: production
-      - key: DATABASE_URL
+      # AGENTGUARD_DATABASE_URL (not DATABASE_URL): the image sets a SQLite default under that name,
+      # which would otherwise win and keep data on the container's temporary disk.
+      - key: AGENTGUARD_DATABASE_URL
         fromDatabase: { name: agentguard-db, property: connectionString }
       - key: AGENTGUARD_SECRET_KEY
         generateValue: true
