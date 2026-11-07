@@ -3,7 +3,8 @@
     python scripts/fetch_model.py <url> <sha256> <dest-dir>
 
 Downloads a .tar.gz, refuses it unless its SHA-256 matches, and extracts it into <dest-dir> with the
-tarfile "data" filter (no absolute paths, links outside the target or device files).
+tarfile "data" filter (no absolute paths, links outside the target or device files). If the file does
+not exist yet (HTTP 404) the build continues without the classifier; a checksum mismatch always fails.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import hashlib
 import sys
 import tarfile
 import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -21,9 +23,16 @@ def main(url: str, sha256: str, dest: Path) -> None:
         raise SystemExit("model URL must be https")
     with tempfile.TemporaryDirectory() as tmp:
         archive = Path(tmp) / "model.tar.gz"
-        with urllib.request.urlopen(url, timeout=120) as resp, archive.open("wb") as out:  # noqa: S310 (https checked)
-            while chunk := resp.read(1 << 20):
-                out.write(chunk)
+        try:
+            with urllib.request.urlopen(url, timeout=120) as resp, archive.open("wb") as out:  # noqa: S310 (https checked)
+                while chunk := resp.read(1 << 20):
+                    out.write(chunk)
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                # Not published yet: build without the classifier (taint tracking + heuristics still run).
+                print(f"WARNING: model not found at {url}; building without the ML classifier")
+                return
+            raise
         digest = hashlib.sha256(archive.read_bytes()).hexdigest()
         if digest != sha256.lower():
             raise SystemExit(f"model checksum mismatch: expected {sha256}, got {digest}")

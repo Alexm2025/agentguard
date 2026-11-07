@@ -52,3 +52,14 @@ def test_rejects_wrong_checksum_and_plain_http(tmp_path: Path, monkeypatch: pyte
     assert not any(tmp_path.iterdir())
     with pytest.raises(SystemExit, match="https"):
         mod.main("http://example.test/m.tar.gz", "0" * 64, tmp_path)
+
+
+def test_missing_release_builds_without_model(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    mod = _load()
+
+    def not_found(url: str, timeout: int) -> Any:
+        raise mod.urllib.error.HTTPError(url, 404, "Not Found", None, None)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", not_found)
+    mod.main("https://example.test/m.tar.gz", "0" * 64, tmp_path)  # no exception: the build continues
+    assert not any(tmp_path.iterdir())
