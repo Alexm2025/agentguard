@@ -41,7 +41,17 @@
       </form>
     </div>
   </aside>
-  <main class="main" id="main"><div class="page">{% block content %}{% endblock %}</div></main>
+  <main class="main" id="main">
+    <header class="topbar">
+      <div class="crumbs"><span class="muted">{{ org_name or "Workspace" }}</span><span class="sep">/</span><span>{% block crumb %}{{ self.title() }}{% endblock %}</span></div>
+      <div class="top-actions">
+        <span class="live-chip"><span class="ping"></span><span class="txt">Protection on</span></span>
+        <a class="icon-btn" href="/approvals" aria-label="Requests waiting for your OK: {{ pending_count }}">{{ icon("bell") }}{% if pending_count %}<span class="dot-alert"></span>{% endif %}</a>
+        <a class="icon-btn avatar-btn" href="/account" aria-label="Your account"><span class="avatar">{{ p.display[:1] }}</span></a>
+      </div>
+    </header>
+    <div class="page">{% block content %}{% endblock %}</div>
+  </main>
 </div>
 {% else %}
 <div class="public">
