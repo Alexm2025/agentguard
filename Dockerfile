@@ -29,6 +29,12 @@ RUN groupadd --system --gid 10001 agentguard \
  && useradd --system --uid 10001 --gid agentguard --home-dir /nonexistent --shell /usr/sbin/nologin agentguard \
  && mkdir -p /data /models && chown agentguard:agentguard /data
 COPY --from=build /opt/venv /opt/venv
+# Optional: bake in the ML classifier. Set MODEL_URL (https .tar.gz) and MODEL_SHA256; the build fails
+# if the checksum does not match. Without them the image runs taint tracking + heuristics only.
+ARG MODEL_URL=""
+ARG MODEL_SHA256=""
+COPY scripts/fetch_model.py /tmp/fetch_model.py
+RUN if [ -n "$MODEL_URL" ]; then python /tmp/fetch_model.py "$MODEL_URL" "$MODEL_SHA256" /models; fi  && rm /tmp/fetch_model.py
 USER 10001:10001
 WORKDIR /data
 EXPOSE 8000 8100 8200
